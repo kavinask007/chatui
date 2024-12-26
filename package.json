@@ -2,10 +2,10 @@
   "name": "ai-chatbot",
   "version": "0.1.0",
   "private": true,
-  "packageManager": "pnpm@9.15.1",
+  "packageManager": "pnpm@latest" ,
   "scripts": {
     "dev": "next dev",
-    "build": "tsx lib/db/migrate && next build",
+    "build": "next build",
     "start": "next start",
     "lint": "next lint && biome lint --write --unsafe",
     "lint:fix": "next lint --fix && biome lint --write --unsafe",
