@@ -101,7 +101,7 @@ export async function POST(request: Request) {
       });
 
       const result = streamText({
-        model: customModel(model.apiIdentifier),
+        model: customModel(model.apiIdentifier,model.provider),
         system: systemPrompt,
         messages: coreMessages,
         maxSteps: 5,

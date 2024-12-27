@@ -187,3 +187,10 @@ export const authenticators = pgTable(
     }),
   })
 );
+
+export const verifiedUsers = pgTable("VerifiedUsers", {
+  email: text("email").notNull(),
+});
+
+export type VerifiedUsers = InferSelectModel<typeof verifiedUsers>;
+

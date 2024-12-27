@@ -8,6 +8,13 @@
       "when": 1735055951266,
       "tag": "0000_colossal_frightful_four",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1735214640649,
+      "tag": "0001_right_sharon_carter",
+      "breakpoints": true
     }
   ]
 }

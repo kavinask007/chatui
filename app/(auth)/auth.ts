@@ -10,18 +10,37 @@ import GoogleProvider from "next-auth/providers/google";
 const connectionString = process.env.POSTGRES_URL!;
 const pool = postgres(connectionString, { max: 1 });
 import { DrizzleAdapter } from "@auth/drizzle-adapter";
-import { accounts, sessions, user, verificationTokens } from "@/lib/db/schema";
+import { isVerfied } from "@/lib/db/queries";
+import {
+  accounts,
+  sessions,
+  user,
+  verificationTokens,
+  verifiedUsers,
+} from "@/lib/db/schema";
 export const db = drizzle(pool);
 interface ExtendedSession extends Session {
   user: User;
 }
 export const authConfigFinal = {
   ...authConfig,
-  debug: true,
+  // debug: true,
   callbacks: {
     async session({ session, user }) {
       session.user.id = user.id;
       return session;
+    },
+    async signIn({ user, account, profile, email, credentials }) {
+      let email_id = user.email || "";
+      let isAllowedToSignIn = await isVerfied(email_id);
+      if (isAllowedToSignIn) {
+        return true;
+      } else {
+        // Return false to display a default error message
+        return false;
+        // Or you can return a URL to redirect to:
+        // return '/unauthorized'
+      }
     },
   },
   adapter: DrizzleAdapter(db, {
@@ -30,8 +49,8 @@ export const authConfigFinal = {
     sessionsTable: sessions,
     verificationTokensTable: verificationTokens,
   }),
-  session:{
-    strategy: "database"
+  session: {
+    strategy: "database",
   },
   providers: [
     GoogleProvider({
@@ -57,6 +76,7 @@ export const authConfigFinal = {
     //   },
     // }),
   ],
+
   // callbacks: {
   // async session({session, user}) {
   //   session.user.id = user.id

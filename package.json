@@ -2,7 +2,7 @@
   "name": "ai-chatbot",
   "version": "0.1.0",
   "private": true,
-  "packageManager": "pnpm@latest" ,
+  "packageManager": "pnpm@latest",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -19,6 +19,7 @@
     "db:up": "drizzle-kit up"
   },
   "dependencies": {
+    "@ai-sdk/amazon-bedrock": "^1.0.6",
     "@ai-sdk/groq": "^1.0.9",
     "@ai-sdk/openai": "1.0.6",
     "@auth/drizzle-adapter": "^1.7.4",

@@ -1,4 +1,5 @@
 import type { NextAuthConfig } from "next-auth";
+import { signIn } from "./auth";
 
 // export const authConfig = {
 //   pages: {
@@ -65,6 +66,7 @@ export const authConfig = {
     // while this file is also used in non-Node.js environments
   ],
   callbacks: {
+    
     authorized({ auth, request: { nextUrl } }) {
       const isLoggedIn = !!auth?.user;
       const paths = ["/", "/chat", ""];
