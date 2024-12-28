@@ -1,21 +1,20 @@
-import type { Metadata } from 'next';
-import { Toaster } from 'sonner';
-import { ThemeProvider } from '@/components/theme-provider';
+import type { Metadata } from "next";
+import { Toaster } from "sonner";
+import { ThemeProvider } from "@/components/theme-provider";
 
-import './globals.css';
+import "./globals.css";
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://chat.vercel.ai'),
-  title: 'ChatBot',
-  description: 'Chatbot Application.',
+  title: "ChatBot",
+  description: "Chatbot Application.",
 };
 
 export const viewport = {
   maximumScale: 1, // Disable auto-zoom on mobile Safari
 };
 
-const LIGHT_THEME_COLOR = 'hsl(0 0% 100%)';
-const DARK_THEME_COLOR = 'hsl(240deg 10% 3.92%)';
+const LIGHT_THEME_COLOR = "hsl(0 0% 100%)";
+const DARK_THEME_COLOR = "hsl(240deg 10% 3.92%)";
 const THEME_COLOR_SCRIPT = `\
 (function() {
   var html = document.documentElement;
