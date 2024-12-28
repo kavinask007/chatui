@@ -4,17 +4,17 @@ import {
   createDataStreamResponse,
   streamObject,
   streamText,
-} from 'ai';
-import { z } from 'zod';
+} from "ai";
+import { z } from "zod";
 
-import { auth } from '@/app/(auth)/auth';
-import { customModel } from '@/lib/ai';
-import { models } from '@/lib/ai/models';
+import { auth } from "@/app/(auth)/auth";
+import { customModel } from "@/lib/ai";
+import { models } from "@/lib/ai/models";
 import {
   codePrompt,
   systemPrompt,
   updateDocumentPrompt,
-} from '@/lib/ai/prompts';
+} from "@/lib/ai/prompts";
 import {
   deleteChatById,
   getChatById,
@@ -23,31 +23,31 @@ import {
   saveDocument,
   saveMessages,
   saveSuggestions,
-} from '@/lib/db/queries';
-import type { Suggestion } from '@/lib/db/schema';
+} from "@/lib/db/queries";
+import type { Suggestion } from "@/lib/db/schema";
 import {
   generateUUID,
   getMostRecentUserMessage,
   sanitizeResponseMessages,
-} from '@/lib/utils';
+} from "@/lib/utils";
 
-import { generateTitleFromUserMessage } from '../../actions';
+import { generateTitleFromUserMessage } from "../../actions";
 
 export const maxDuration = 60;
 
 type AllowedTools =
-  | 'createDocument'
-  | 'updateDocument'
-  | 'requestSuggestions'
-  | 'getWeather';
+  | "createDocument"
+  | "updateDocument"
+  | "requestSuggestions"
+  | "getWeather";
 
 const blocksTools: AllowedTools[] = [
-  'createDocument',
-  'updateDocument',
-  'requestSuggestions',
+  "createDocument",
+  "updateDocument",
+  "requestSuggestions",
 ];
 
-const weatherTools: AllowedTools[] = ['getWeather'];
+const weatherTools: AllowedTools[] = ["getWeather"];
 
 const allTools: AllowedTools[] = [...blocksTools, ...weatherTools];
 
@@ -62,20 +62,20 @@ export async function POST(request: Request) {
   const session = await auth();
 
   if (!session || !session.user || !session.user.id) {
-    return new Response('Unauthorized', { status: 401 });
+    return new Response("Unauthorized", { status: 401 });
   }
 
   const model = models.find((model) => model.id === modelId);
 
   if (!model) {
-    return new Response('Model not found', { status: 404 });
+    return new Response("Model not found", { status: 404 });
   }
 
   const coreMessages = convertToCoreMessages(messages);
   const userMessage = getMostRecentUserMessage(coreMessages);
 
   if (!userMessage) {
-    return new Response('No user message found', { status: 400 });
+    return new Response("No user message found", { status: 400 });
   }
 
   const chat = await getChatById({ id });
@@ -96,12 +96,12 @@ export async function POST(request: Request) {
   return createDataStreamResponse({
     execute: (dataStream) => {
       dataStream.writeData({
-        type: 'user-message-id',
+        type: "user-message-id",
         content: userMessageId,
       });
 
       const result = streamText({
-        model: customModel(model.apiIdentifier,model.provider),
+        model: customModel(model.apiIdentifier, model.provider),
         system: systemPrompt,
         messages: coreMessages,
         maxSteps: 5,
@@ -420,7 +420,7 @@ export async function POST(request: Request) {
                   (message) => {
                     const messageId = generateUUID();
 
-                    if (message.role === 'assistant') {
+                    if (message.role === "assistant") {
                       dataStream.writeMessageAnnotation({
                         messageIdFromServer: messageId,
                       });
@@ -433,17 +433,17 @@ export async function POST(request: Request) {
                       content: message.content,
                       createdAt: new Date(),
                     };
-                  },
+                  }
                 ),
               });
             } catch (error) {
-              console.error('Failed to save chat');
+              console.error("Failed to save chat");
             }
           }
         },
         experimental_telemetry: {
           isEnabled: true,
-          functionId: 'stream-text',
+          functionId: "stream-text",
         },
       });
 
@@ -454,30 +454,30 @@ export async function POST(request: Request) {
 
 export async function DELETE(request: Request) {
   const { searchParams } = new URL(request.url);
-  const id = searchParams.get('id');
+  const id = searchParams.get("id");
 
   if (!id) {
-    return new Response('Not Found', { status: 404 });
+    return new Response("Not Found", { status: 404 });
   }
 
   const session = await auth();
 
   if (!session || !session.user) {
-    return new Response('Unauthorized', { status: 401 });
+    return new Response("Unauthorized", { status: 401 });
   }
 
   try {
     const chat = await getChatById({ id });
 
     if (chat.userId !== session.user.id) {
-      return new Response('Unauthorized', { status: 401 });
+      return new Response("Unauthorized", { status: 401 });
     }
 
     await deleteChatById({ id });
 
-    return new Response('Chat deleted', { status: 200 });
+    return new Response("Chat deleted", { status: 200 });
   } catch (error) {
-    return new Response('An error occurred while processing your request', {
+    return new Response("An error occurred while processing your request", {
       status: 500,
     });
   }
