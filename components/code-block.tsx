@@ -29,8 +29,7 @@ export function CodeBlock({
   const isPython = match && match[1] === "python";
   const codeContent = String(children).replace(/\n$/, "");
   const [tab, setTab] = useState<"code" | "run">("code");
-
-  if (!inline) {
+  if (!inline && className) {
     return (
       <div className="not-prose flex flex-col relative">
         <Button
@@ -63,7 +62,7 @@ export function CodeBlock({
   } else {
     return (
       <code
-        className={`${className} text-sm bg-zinc-100 dark:bg-zinc-800 py-0.5 px-1 rounded-md`}
+        className={`${className} text-sm bg-zinc-300 dark:bg-zinc-700 py-0.5 px-1 rounded-md`}
         {...props}
       >
         {children}

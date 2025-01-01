@@ -186,7 +186,7 @@ export const authenticators = pgTable(
       columns: [authenticator.userId, authenticator.credentialID],
     }),
   })
-);
+);  
 
 export const verifiedUsers = pgTable("VerifiedUsers", {
   email: text("email").notNull(),
