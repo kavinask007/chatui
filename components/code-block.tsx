@@ -62,8 +62,12 @@ export function CodeBlock({
   } else {
     return (
       <code
-        className={`${className} text-sm bg-zinc-300 dark:bg-zinc-700 py-0.5 px-1 rounded-md`}
+        className={`${className} text-sm bg-zinc-300 dark:bg-zinc-700 py-0.5 px-1 rounded-md cursor-pointer`}
         {...props}
+        onClick={async () => {
+          await copyToClipboard(codeContent as string);
+          toast.success("Copied to clipboard!");
+        }}
       >
         {children}
       </code>

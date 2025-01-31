@@ -22,6 +22,12 @@ export const models: Array<Model> = [
     apiIdentifier: "llama-3.1-70b-versatile",
     description: "For complex, multi-step tasks",
     provider: "groq",
+  },{
+    id: "groqq-llama8b",
+    label: "groq-llama-3.1-8b",
+    apiIdentifier: "llama3-8b-8192",
+    description: "For complex, multi-step tasks",
+    provider: "groq",
   },
   {
     id: "bedrock-claude-3",

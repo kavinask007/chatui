@@ -1,12 +1,12 @@
-'use client';
+"use client";
 
-import type { User } from 'next-auth';
-import { useRouter } from 'next/navigation';
-
-import { PlusIcon } from '@/components/icons';
-import { SidebarHistory } from '@/components/sidebar-history';
-import { SidebarUserNav } from '@/components/sidebar-user-nav';
-import { Button } from '@/components/ui/button';
+import type { User } from "next-auth";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
+import { PlusIcon } from "@/components/icons";
+import { SidebarHistory } from "@/components/sidebar-history";
+import { SidebarUserNav } from "@/components/sidebar-user-nav";
+import { Button } from "@/components/ui/button";
 import {
   Sidebar,
   SidebarContent,
@@ -14,13 +14,29 @@ import {
   SidebarHeader,
   SidebarMenu,
   useSidebar,
-} from '@/components/ui/sidebar';
-import Link from 'next/link';
-import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
+} from "@/components/ui/sidebar";
+import Link from "next/link";
+import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
 
 export function AppSidebar({ user }: { user: User | undefined }) {
   const router = useRouter();
   const { setOpenMobile } = useSidebar();
+
+  useEffect(() => {
+    const handleKeyDown = (event: any) => {
+      if (event.ctrlKey && event.key === "Enter") {
+        setOpenMobile(false);
+        router.push("/");
+        router.refresh();
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [router, setOpenMobile]);
 
   return (
     <Sidebar className="group-data-[side=left]:border-r-0">
@@ -46,14 +62,14 @@ export function AppSidebar({ user }: { user: User | undefined }) {
                   className="p-2 h-fit"
                   onClick={() => {
                     setOpenMobile(false);
-                    router.push('/');
+                    router.push("/");
                     router.refresh();
                   }}
                 >
                   <PlusIcon />
                 </Button>
               </TooltipTrigger>
-              <TooltipContent align="end">New Chat</TooltipContent>
+              <TooltipContent align="end">New Chat (Ctrl + Enter) </TooltipContent>
             </Tooltip>
           </div>
         </SidebarMenu>
