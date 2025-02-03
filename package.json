@@ -19,8 +19,9 @@
     "db:up": "drizzle-kit up"
   },
   "dependencies": {
-    "@ai-sdk/amazon-bedrock": "^1.0.6",
-    "@ai-sdk/groq": "^1.0.9",
+    "@ai-sdk/amazon-bedrock": "1.0.7",
+    "@ai-sdk/groq": "1.0.7",
+    "@ai-sdk/provider": "1.0.7",
     "@ai-sdk/openai": "1.0.6",
     "@auth/drizzle-adapter": "^1.7.4",
     "@codemirror/lang-javascript": "^6.2.2",
