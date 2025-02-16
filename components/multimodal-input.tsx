@@ -227,7 +227,7 @@ function PureMultimodalInput({
 
       <Textarea
         ref={textareaRef}
-        placeholder="Send a message... | Shift + Enter for new line | Ctrl + Enter for  new chat"
+        placeholder="Send a message.."
         value={input}
         onChange={handleInput}
         className={cx(

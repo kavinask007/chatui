@@ -1,6 +1,6 @@
 {
-  "id": "372525e0-499e-4f80-8c25-aea6faffe7a0",
-  "prevId": "c5cac3d1-28a1-4226-861f-fc043af351b2",
+  "id": "978f5851-bdfc-4058-a72e-165d765669e0",
+  "prevId": "a1af74b1-f64c-4594-8c26-fac3233373ae",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -316,6 +316,99 @@
       },
       "uniqueConstraints": {}
     },
+    "public.Group": {
+      "name": "Group",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "createdAt": {
+          "name": "createdAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {}
+    },
+    "public.GroupModelAccess": {
+      "name": "GroupModelAccess",
+      "schema": "",
+      "columns": {
+        "groupId": {
+          "name": "groupId",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "modelConfigId": {
+          "name": "modelConfigId",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "GroupModelAccess_groupId_Group_id_fk": {
+          "name": "GroupModelAccess_groupId_Group_id_fk",
+          "tableFrom": "GroupModelAccess",
+          "tableTo": "Group",
+          "columnsFrom": [
+            "groupId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "GroupModelAccess_modelConfigId_ModelConfig_id_fk": {
+          "name": "GroupModelAccess_modelConfigId_ModelConfig_id_fk",
+          "tableFrom": "GroupModelAccess",
+          "tableTo": "ModelConfig",
+          "columnsFrom": [
+            "modelConfigId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "GroupModelAccess_groupId_modelConfigId_pk": {
+          "name": "GroupModelAccess_groupId_modelConfigId_pk",
+          "columns": [
+            "groupId",
+            "modelConfigId"
+          ]
+        }
+      },
+      "uniqueConstraints": {}
+    },
     "public.Message": {
       "name": "Message",
       "schema": "",
@@ -368,6 +461,215 @@
           "onUpdate": "no action"
         }
       },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {}
+    },
+    "public.ModelConfig": {
+      "name": "ModelConfig",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "providerId": {
+          "name": "providerId",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "modelId": {
+          "name": "modelId",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "createdAt": {
+          "name": "createdAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "ModelConfig_providerId_ModelProvider_id_fk": {
+          "name": "ModelConfig_providerId_ModelProvider_id_fk",
+          "tableFrom": "ModelConfig",
+          "tableTo": "ModelProvider",
+          "columnsFrom": [
+            "providerId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {}
+    },
+    "public.ModelConfigCredential": {
+      "name": "ModelConfigCredential",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "modelConfigId": {
+          "name": "modelConfigId",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "key": {
+          "name": "key",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "value": {
+          "name": "value",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "ModelConfigCredential_modelConfigId_ModelConfig_id_fk": {
+          "name": "ModelConfigCredential_modelConfigId_ModelConfig_id_fk",
+          "tableFrom": "ModelConfigCredential",
+          "tableTo": "ModelConfig",
+          "columnsFrom": [
+            "modelConfigId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {}
+    },
+    "public.ModelConfigSetting": {
+      "name": "ModelConfigSetting",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "modelConfigId": {
+          "name": "modelConfigId",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "key": {
+          "name": "key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "value": {
+          "name": "value",
+          "type": "json",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "ModelConfigSetting_modelConfigId_ModelConfig_id_fk": {
+          "name": "ModelConfigSetting_modelConfigId_ModelConfig_id_fk",
+          "tableFrom": "ModelConfigSetting",
+          "tableTo": "ModelConfig",
+          "columnsFrom": [
+            "modelConfigId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {}
+    },
+    "public.ModelProvider": {
+      "name": "ModelProvider",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "name": {
+          "name": "name",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "baseUrl": {
+          "name": "baseUrl",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "createdAt": {
+          "name": "createdAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "configuration": {
+          "name": "configuration",
+          "type": "json",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'{}'::json"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {}
     },
@@ -554,11 +856,82 @@
           "type": "text",
           "primaryKey": false,
           "notNull": false
+        },
+        "isAdmin": {
+          "name": "isAdmin",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
         }
       },
       "indexes": {},
       "foreignKeys": {},
       "compositePrimaryKeys": {},
+      "uniqueConstraints": {}
+    },
+    "public.UserGroup": {
+      "name": "UserGroup",
+      "schema": "",
+      "columns": {
+        "userId": {
+          "name": "userId",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "groupId": {
+          "name": "groupId",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "role": {
+          "name": "role",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'member'"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "UserGroup_userId_User_id_fk": {
+          "name": "UserGroup_userId_User_id_fk",
+          "tableFrom": "UserGroup",
+          "tableTo": "User",
+          "columnsFrom": [
+            "userId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "UserGroup_groupId_Group_id_fk": {
+          "name": "UserGroup_groupId_Group_id_fk",
+          "tableFrom": "UserGroup",
+          "tableTo": "Group",
+          "columnsFrom": [
+            "groupId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "UserGroup_userId_groupId_pk": {
+          "name": "UserGroup_userId_groupId_pk",
+          "columns": [
+            "userId",
+            "groupId"
+          ]
+        }
+      },
       "uniqueConstraints": {}
     },
     "public.verificationToken": {

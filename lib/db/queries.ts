@@ -1,7 +1,7 @@
 import "server-only";
 
 import { genSaltSync, hashSync } from "bcrypt-ts";
-import { and, asc, desc, eq, gt, gte } from "drizzle-orm";
+import { and, asc, desc, eq, gt, gte, inArray } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 
@@ -16,6 +16,13 @@ import {
   message,
   vote,
   verifiedUsers,
+  modelConfig,
+  group,
+  userGroup,
+  groupModelAccess,
+  modelProvider,
+  modelConfigCredential,
+  modelConfigSetting,
 } from "./schema";
 import { BlockKind } from "@/components/block";
 
@@ -126,6 +133,7 @@ export async function getMessagesByChatId({ id }: { id: string }) {
     throw error;
   }
 }
+
 export async function isVerfied(email: string) {
   try {
     const isAllowedToSignIn = await db
@@ -340,6 +348,325 @@ export async function updateChatVisiblityById({
     return await db.update(chat).set({ visibility }).where(eq(chat.id, chatId));
   } catch (error) {
     console.error("Failed to update chat visibility in database");
+    throw error;
+  }
+}
+
+// New functions for user groups and model access
+
+export async function getUserAvailableModels(userId: string) {
+  try {
+    // First check if user is admin
+    const [userRecord] = await db
+      .select({ isAdmin: user.isAdmin })
+      .from(user)
+      .where(eq(user.id, userId));
+
+    // If user is admin, return all models
+    if (userRecord?.isAdmin) {
+      return await db
+        .select({
+          id: modelConfig.id,
+          name: modelConfig.name,
+          providerId: modelConfig.providerId,
+          modelId: modelConfig.modelId,
+          description: modelConfig.description,
+          provider: {
+            name: modelProvider.name,
+            baseUrl: modelProvider.baseUrl,
+            configuration: modelProvider.configuration,
+          },
+        })
+        .from(modelConfig)
+        .innerJoin(modelProvider, eq(modelConfig.providerId, modelProvider.id));
+    }
+
+    // Otherwise, get models based on user's groups
+    const userGroups = await db
+      .select({
+        groupId: userGroup.groupId,
+      })
+      .from(userGroup)
+      .where(eq(userGroup.userId, userId));
+
+    const groupIds = userGroups.map((g) => g.groupId);
+
+    if (groupIds.length === 0) {
+      return [];
+    }
+
+    // Get model configs available to user's groups
+    return await db
+      .select({
+        id: modelConfig.id,
+        name: modelConfig.name,
+        providerId: modelConfig.providerId,
+        modelId: modelConfig.modelId,
+        description: modelConfig.description,
+        provider: {
+          name: modelProvider.name,
+          configuration: modelProvider.configuration,
+        },
+      })
+      .from(modelConfig)
+      .innerJoin(modelProvider, eq(modelConfig.providerId, modelProvider.id))
+      .innerJoin(
+        groupModelAccess,
+        eq(groupModelAccess.modelConfigId, modelConfig.id)
+      )
+      .where(inArray(groupModelAccess.groupId, groupIds));
+  } catch (error) {
+    console.error("Failed to get user's available models", error);
+    throw error;
+  }
+}
+
+export async function getUserAvailableModelsWithConfig(userId: string) {
+  try {
+    // First check if user is admin
+    const [userRecord] = await db
+      .select({ isAdmin: user.isAdmin })
+      .from(user)
+      .where(eq(user.id, userId));
+
+    // If user is admin, return all models with their configurations
+    if (userRecord?.isAdmin) {
+      return await db
+        .select({
+          id: modelConfig.id,
+          name: modelConfig.name,
+          providerId: modelConfig.providerId,
+          modelId: modelConfig.modelId,
+          description: modelConfig.description,
+          provider: {
+            name: modelProvider.name,
+            baseUrl: modelProvider.baseUrl,
+            configuration: modelProvider.configuration,
+          },
+          credentials: modelConfigCredential,
+          settings: modelConfigSetting,
+        })
+        .from(modelConfig)
+        .innerJoin(modelProvider, eq(modelConfig.providerId, modelProvider.id))
+        .leftJoin(
+          modelConfigCredential,
+          eq(modelConfigCredential.modelConfigId, modelConfig.id)
+        )
+        .leftJoin(
+          modelConfigSetting,
+          eq(modelConfigSetting.modelConfigId, modelConfig.id)
+        );
+    }
+
+    // Otherwise, get models based on user's groups
+    const userGroups = await db
+      .select({
+        groupId: userGroup.groupId,
+      })
+      .from(userGroup)
+      .where(eq(userGroup.userId, userId));
+
+    const groupIds = userGroups.map((g) => g.groupId);
+
+    if (groupIds.length === 0) {
+      return [];
+    }
+
+    // Get model configs available to user's groups with their configurations
+    return await db
+      .select({
+        id: modelConfig.id,
+        name: modelConfig.name,
+        providerId: modelConfig.providerId,
+        modelId: modelConfig.modelId,
+        description: modelConfig.description,
+        provider: {
+          name: modelProvider.name,
+          baseUrl: modelProvider.baseUrl,
+          configuration: modelProvider.configuration,
+        },
+        credentials: modelConfigCredential,
+        settings: modelConfigSetting,
+      })
+      .from(modelConfig)
+      .innerJoin(modelProvider, eq(modelConfig.providerId, modelProvider.id))
+      .innerJoin(
+        groupModelAccess,
+        eq(groupModelAccess.modelConfigId, modelConfig.id)
+      )
+      .leftJoin(
+        modelConfigCredential,
+        eq(modelConfigCredential.modelConfigId, modelConfig.id)
+      )
+      .leftJoin(
+        modelConfigSetting,
+        eq(modelConfigSetting.modelConfigId, modelConfig.id)
+      )
+      .where(inArray(groupModelAccess.groupId, groupIds));
+  } catch (error) {
+    console.error("Failed to get user's available models with config", error);
+    throw error;
+  }
+}
+
+export async function createUserGroup({
+  name,
+  description,
+}: {
+  name: string;
+  description?: string;
+}) {
+  try {
+    return await db.insert(group).values({
+      name,
+      description,
+      createdAt: new Date(),
+    });
+  } catch (error) {
+    console.error("Failed to create user group", error);
+    throw error;
+  }
+}
+
+export async function addUserToGroup({
+  userId,
+  groupId,
+  role = "member",
+}: {
+  userId: string;
+  groupId: string;
+  role?: "member" | "admin";
+}) {
+  try {
+    return await db.insert(userGroup).values({
+      userId,
+      groupId,
+      role,
+    });
+  } catch (error) {
+    console.error("Failed to add user to group", error);
+    throw error;
+  }
+}
+
+export async function removeUserFromGroup({
+  userId,
+  groupId,
+}: {
+  userId: string;
+  groupId: string;
+}) {
+  try {
+    return await db
+      .delete(userGroup)
+      .where(and(eq(userGroup.userId, userId), eq(userGroup.groupId, groupId)));
+  } catch (error) {
+    console.error("Failed to remove user from group", error);
+    throw error;
+  }
+}
+
+type ModelCredentialKey =
+  | "apiKey"
+  | "accessKeyId"
+  | "secretAccessKey"
+  | "region"
+  | "projectId"
+  | "serviceAccountKey";
+
+export async function createModel({
+  name,
+  providerId,
+  modelId,
+  description,
+  credentials,
+}: {
+  name: string;
+  providerId: string;
+  modelId: string;
+  description?: string;
+  credentials?: Array<{ key: ModelCredentialKey; value: string }>;
+}) {
+  try {
+    const [result] = await db
+      .insert(modelConfig)
+      .values({
+        name,
+        providerId,
+        modelId,
+        description,
+        createdAt: new Date(),
+      })
+      .returning({ id: modelConfig.id });
+
+    if (credentials && credentials.length > 0) {
+      await db.insert(modelConfigCredential).values(
+        credentials.map((cred) => ({
+          modelConfigId: result.id,
+          key: cred.key,
+          value: cred.value,
+        }))
+      );
+    }
+
+    return result;
+  } catch (error) {
+    console.error("Failed to create model", error);
+    throw error;
+  }
+}
+
+export async function removeModel(modelId: string) {
+  try {
+    await db
+      .delete(groupModelAccess)
+      .where(eq(groupModelAccess.modelConfigId, modelId));
+    await db
+      .delete(modelConfigCredential)
+      .where(eq(modelConfigCredential.modelConfigId, modelId));
+    return await db.delete(modelConfig).where(eq(modelConfig.id, modelId));
+  } catch (error) {
+    console.error("Failed to remove model", error);
+    throw error;
+  }
+}
+
+export async function assignModelToGroup({
+  modelId,
+  groupId,
+}: {
+  modelId: string;
+  groupId: string;
+}) {
+  try {
+    return await db.insert(groupModelAccess).values({
+      modelConfigId: modelId,
+      groupId,
+    });
+  } catch (error) {
+    console.error("Failed to assign model to group", error);
+    throw error;
+  }
+}
+
+export async function removeModelFromGroup({
+  modelId,
+  groupId,
+}: {
+  modelId: string;
+  groupId: string;
+}) {
+  try {
+    return await db
+      .delete(groupModelAccess)
+      .where(
+        and(
+          eq(groupModelAccess.modelConfigId, modelId),
+          eq(groupModelAccess.groupId, groupId)
+        )
+      );
+  } catch (error) {
+    console.error("Failed to remove model from group", error);
     throw error;
   }
 }

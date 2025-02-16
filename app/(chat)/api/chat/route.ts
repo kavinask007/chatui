@@ -9,7 +9,6 @@ import { z } from "zod";
 
 import { auth } from "@/app/(auth)/auth";
 import { customModel } from "@/lib/ai";
-import { models } from "@/lib/ai/models";
 import {
   codePrompt,
   systemPrompt,
@@ -23,6 +22,7 @@ import {
   saveDocument,
   saveMessages,
   saveSuggestions,
+  getUserAvailableModelsWithConfig,
 } from "@/lib/db/queries";
 import type { Suggestion } from "@/lib/db/schema";
 import {
@@ -30,7 +30,8 @@ import {
   getMostRecentUserMessage,
   sanitizeResponseMessages,
 } from "@/lib/utils";
-
+import { experimental_generateImage as generateImage } from "ai";
+import { fireworks } from "@ai-sdk/fireworks";
 import { generateTitleFromUserMessage } from "../../actions";
 
 export const maxDuration = 60;
@@ -59,14 +60,15 @@ export async function POST(request: Request) {
   }: { id: string; messages: Array<Message>; modelId: string } =
     await request.json();
 
-  const session = await auth();
+  const session :any = await auth();
 
   if (!session || !session.user || !session.user.id) {
     return new Response("Unauthorized", { status: 401 });
   }
 
+  // Get available models from database
+  const models = await getUserAvailableModelsWithConfig(session.user.id);
   const model = models.find((model) => model.id === modelId);
-
   if (!model) {
     return new Response("Model not found", { status: 404 });
   }
@@ -101,7 +103,7 @@ export async function POST(request: Request) {
       });
 
       const result = streamText({
-        model: customModel(model.apiIdentifier, model.provider),
+        model: customModel(model),
         system: systemPrompt,
         messages: coreMessages,
         maxSteps: 5,
@@ -460,7 +462,7 @@ export async function DELETE(request: Request) {
     return new Response("Not Found", { status: 404 });
   }
 
-  const session = await auth();
+  const session :any = await auth();
 
   if (!session || !session.user) {
     return new Response("Unauthorized", { status: 401 });

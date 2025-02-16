@@ -1,0 +1,1 @@
+ALTER TABLE "ModelProvider" ADD COLUMN "configuration" json DEFAULT '{}'::json NOT NULL;

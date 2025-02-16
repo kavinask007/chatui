@@ -1,12 +1,15 @@
-import { cookies } from 'next/headers';
-import { notFound } from 'next/navigation';
+import { cookies } from "next/headers";
+import { notFound } from "next/navigation";
 
-import { auth } from '@/app/(auth)/auth';
-import { Chat } from '@/components/chat';
-import { DEFAULT_MODEL_NAME, models } from '@/lib/ai/models';
-import { getChatById, getMessagesByChatId } from '@/lib/db/queries';
-import { convertToUIMessages } from '@/lib/utils';
-import { DataStreamHandler } from '@/components/data-stream-handler';
+import { auth } from "@/app/(auth)/auth";
+import { Chat } from "@/components/chat";
+import {
+  getChatById,
+  getMessagesByChatId,
+  getUserAvailableModels,
+} from "@/lib/db/queries";
+import { convertToUIMessages } from "@/lib/utils";
+import { DataStreamHandler } from "@/components/data-stream-handler";
 
 export default async function Page(props: { params: Promise<{ id: string }> }) {
   const params = await props.params;
@@ -19,7 +22,7 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
 
   const session = await auth();
 
-  if (chat.visibility === 'private') {
+  if (chat.visibility === "private") {
     if (!session || !session.user) {
       return notFound();
     }
@@ -34,16 +37,21 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
   });
 
   const cookieStore = await cookies();
-  const modelIdFromCookie = cookieStore.get('model-id')?.value;
+  const modelIdFromCookie = cookieStore.get("model-id")?.value;
+
+  // Get available models directly from database
+  const models = await getUserAvailableModels(session?.user?.id || "");
+  console.log(models);
   const selectedModelId =
-    models.find((model) => model.id === modelIdFromCookie)?.id ||
-    DEFAULT_MODEL_NAME;
+    models.find((model: any) => model.id === modelIdFromCookie)?.id ||
+    (models.length > 0 ? models[0].id : "");
 
   return (
     <>
       <Chat
         id={chat.id}
         initialMessages={convertToUIMessages(messagesFromDb)}
+        availablemodels={models}
         selectedModelId={selectedModelId}
         selectedVisibilityType={chat.visibility}
         isReadonly={session?.user?.id !== chat.userId}

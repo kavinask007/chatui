@@ -44,12 +44,56 @@ CREATE TABLE IF NOT EXISTS "Document" (
 	CONSTRAINT "Document_id_createdAt_pk" PRIMARY KEY("id","createdAt")
 );
 --> statement-breakpoint
+CREATE TABLE IF NOT EXISTS "Group" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"name" text NOT NULL,
+	"description" text,
+	"createdAt" timestamp DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE IF NOT EXISTS "GroupModelAccess" (
+	"groupId" uuid NOT NULL,
+	"modelConfigId" uuid NOT NULL,
+	CONSTRAINT "GroupModelAccess_groupId_modelConfigId_pk" PRIMARY KEY("groupId","modelConfigId")
+);
+--> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "Message" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"chatId" uuid NOT NULL,
 	"role" varchar NOT NULL,
 	"content" json NOT NULL,
 	"createdAt" timestamp NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE IF NOT EXISTS "ModelConfig" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"name" text NOT NULL,
+	"providerId" uuid NOT NULL,
+	"modelId" text NOT NULL,
+	"description" text,
+	"createdAt" timestamp DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE IF NOT EXISTS "ModelConfigCredential" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"modelConfigId" uuid NOT NULL,
+	"key" varchar NOT NULL,
+	"value" text NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE IF NOT EXISTS "ModelConfigSetting" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"modelConfigId" uuid NOT NULL,
+	"key" text NOT NULL,
+	"value" json NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE IF NOT EXISTS "ModelProvider" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"name" varchar NOT NULL,
+	"baseUrl" text,
+	"description" text,
+	"createdAt" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "session" (
@@ -77,7 +121,15 @@ CREATE TABLE IF NOT EXISTS "User" (
 	"email" varchar(64) NOT NULL,
 	"password" varchar(64),
 	"emailVerified" timestamp,
-	"image" text
+	"image" text,
+	"isAdmin" boolean DEFAULT false NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE IF NOT EXISTS "UserGroup" (
+	"userId" text NOT NULL,
+	"groupId" uuid NOT NULL,
+	"role" varchar DEFAULT 'member' NOT NULL,
+	CONSTRAINT "UserGroup_userId_groupId_pk" PRIMARY KEY("userId","groupId")
 );
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "verificationToken" (
@@ -85,6 +137,10 @@ CREATE TABLE IF NOT EXISTS "verificationToken" (
 	"token" text NOT NULL,
 	"expires" timestamp NOT NULL,
 	CONSTRAINT "verificationToken_identifier_token_pk" PRIMARY KEY("identifier","token")
+);
+--> statement-breakpoint
+CREATE TABLE IF NOT EXISTS "VerifiedUsers" (
+	"email" text NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "Vote" (
@@ -119,7 +175,37 @@ EXCEPTION
 END $$;
 --> statement-breakpoint
 DO $$ BEGIN
+ ALTER TABLE "GroupModelAccess" ADD CONSTRAINT "GroupModelAccess_groupId_Group_id_fk" FOREIGN KEY ("groupId") REFERENCES "public"."Group"("id") ON DELETE cascade ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
+ ALTER TABLE "GroupModelAccess" ADD CONSTRAINT "GroupModelAccess_modelConfigId_ModelConfig_id_fk" FOREIGN KEY ("modelConfigId") REFERENCES "public"."ModelConfig"("id") ON DELETE cascade ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
  ALTER TABLE "Message" ADD CONSTRAINT "Message_chatId_Chat_id_fk" FOREIGN KEY ("chatId") REFERENCES "public"."Chat"("id") ON DELETE no action ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
+ ALTER TABLE "ModelConfig" ADD CONSTRAINT "ModelConfig_providerId_ModelProvider_id_fk" FOREIGN KEY ("providerId") REFERENCES "public"."ModelProvider"("id") ON DELETE cascade ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
+ ALTER TABLE "ModelConfigCredential" ADD CONSTRAINT "ModelConfigCredential_modelConfigId_ModelConfig_id_fk" FOREIGN KEY ("modelConfigId") REFERENCES "public"."ModelConfig"("id") ON DELETE cascade ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
+ ALTER TABLE "ModelConfigSetting" ADD CONSTRAINT "ModelConfigSetting_modelConfigId_ModelConfig_id_fk" FOREIGN KEY ("modelConfigId") REFERENCES "public"."ModelConfig"("id") ON DELETE cascade ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
@@ -138,6 +224,18 @@ END $$;
 --> statement-breakpoint
 DO $$ BEGIN
  ALTER TABLE "Suggestion" ADD CONSTRAINT "Suggestion_documentId_documentCreatedAt_Document_id_createdAt_fk" FOREIGN KEY ("documentId","documentCreatedAt") REFERENCES "public"."Document"("id","createdAt") ON DELETE no action ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
+ ALTER TABLE "UserGroup" ADD CONSTRAINT "UserGroup_userId_User_id_fk" FOREIGN KEY ("userId") REFERENCES "public"."User"("id") ON DELETE cascade ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
+ ALTER TABLE "UserGroup" ADD CONSTRAINT "UserGroup_groupId_Group_id_fk" FOREIGN KEY ("groupId") REFERENCES "public"."Group"("id") ON DELETE cascade ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;

@@ -1,33 +1,35 @@
-'use client';
+"use client";
 
-import { startTransition, useMemo, useOptimistic, useState } from 'react';
+import { startTransition, useMemo, useOptimistic, useState } from "react";
 
-import { saveModelId } from '@/app/(chat)/actions';
-import { Button } from '@/components/ui/button';
+import { saveModelId } from "@/app/(chat)/actions";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { models } from '@/lib/ai/models';
-import { cn } from '@/lib/utils';
+} from "@/components/ui/dropdown-menu";
+// import { models } from '@/lib/ai/models';
+import { cn } from "@/lib/utils";
 
-import { CheckCircleFillIcon, ChevronDownIcon } from './icons';
+import { CheckCircleFillIcon, ChevronDownIcon } from "./icons";
 
 export function ModelSelector({
+  availablemodels,
   selectedModelId,
   className,
 }: {
+  availablemodels: any;
   selectedModelId: string;
 } & React.ComponentProps<typeof Button>) {
   const [open, setOpen] = useState(false);
   const [optimisticModelId, setOptimisticModelId] =
     useOptimistic(selectedModelId);
-
+  console.log(availablemodels);
   const selectedModel = useMemo(
-    () => models.find((model) => model.id === optimisticModelId),
-    [optimisticModelId],
+    () => availablemodels?.find((model: any) => model.id === optimisticModelId),
+    [optimisticModelId]
   );
 
   return (
@@ -35,17 +37,17 @@ export function ModelSelector({
       <DropdownMenuTrigger
         asChild
         className={cn(
-          'w-fit data-[state=open]:bg-accent data-[state=open]:text-accent-foreground',
-          className,
+          "w-fit data-[state=open]:bg-accent data-[state=open]:text-accent-foreground",
+          className
         )}
       >
         <Button variant="outline" className="md:px-2 md:h-[34px]">
-          {selectedModel?.label}
+          {selectedModel?.name}
           <ChevronDownIcon />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="min-w-[300px]">
-        {models.map((model) => (
+        {availablemodels?.map((model: any) => (
           <DropdownMenuItem
             key={model.id}
             onSelect={() => {
@@ -60,7 +62,7 @@ export function ModelSelector({
             data-active={model.id === optimisticModelId}
           >
             <div className="flex flex-col gap-1 items-start">
-              {model.label}
+              {model.name}
               {model.description && (
                 <div className="text-xs text-muted-foreground">
                   {model.description}

@@ -12,6 +12,7 @@ import {
   integer,
 } from "drizzle-orm/pg-core";
 import type { AdapterAccountType } from "next-auth/adapters";
+
 export const user = pgTable("User", {
   id: text("id")
     .primaryKey()
@@ -22,9 +23,123 @@ export const user = pgTable("User", {
   password: varchar("password", { length: 64 }),
   emailVerified: timestamp("emailVerified", { mode: "date" }),
   image: text("image"),
+  isAdmin: boolean("isAdmin").notNull().default(false),
 });
 
 export type User = InferSelectModel<typeof user>;
+
+export const group = pgTable("Group", {
+  id: uuid("id").primaryKey().notNull().defaultRandom(),
+  name: text("name").notNull(),
+  description: text("description"),
+  createdAt: timestamp("createdAt").notNull().defaultNow(),
+});
+
+export type Group = InferSelectModel<typeof group>;
+
+export const userGroup = pgTable(
+  "UserGroup",
+  {
+    userId: text("userId")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    groupId: uuid("groupId")
+      .notNull()
+      .references(() => group.id, { onDelete: "cascade" }),
+    role: varchar("role", { enum: ["member", "admin"] })
+      .notNull()
+      .default("member"),
+  },
+  (table) => ({
+    pk: primaryKey({ columns: [table.userId, table.groupId] }),
+  })
+);
+
+export type UserGroup = InferSelectModel<typeof userGroup>;
+
+export const modelProvider = pgTable("ModelProvider", {
+  id: uuid("id").primaryKey().notNull().defaultRandom(),
+  name: varchar("name", { 
+    enum: [
+      "openai",
+      "anthropic", 
+      "mistral",
+      "cohere",
+      "bedrock",
+      "ollama",
+      "groq",
+      "google-vertex",
+      "google-generative"
+    ]
+  }).notNull(),
+  baseUrl: text("baseUrl"),
+  description: text("description"),
+  createdAt: timestamp("createdAt").notNull().defaultNow(),
+  configuration: json("configuration").notNull().default({})
+});
+
+export type ModelProvider = InferSelectModel<typeof modelProvider>;
+
+export const modelConfig = pgTable("ModelConfig", {
+  id: uuid("id").primaryKey().notNull().defaultRandom(),
+  name: text("name").notNull(),
+  providerId: uuid("providerId")
+    .notNull()
+    .references(() => modelProvider.id, { onDelete: "cascade" }),
+  modelId: text("modelId").notNull(), // e.g. gpt-4-turbo, claude-3-opus-20240229, etc
+  description: text("description"),
+  createdAt: timestamp("createdAt").notNull().defaultNow(),
+});
+
+export type ModelConfig = InferSelectModel<typeof modelConfig>;
+
+export const modelConfigCredential = pgTable("ModelConfigCredential", {
+  id: uuid("id").primaryKey().notNull().defaultRandom(),
+  modelConfigId: uuid("modelConfigId")
+    .notNull()
+    .references(() => modelConfig.id, { onDelete: "cascade" }),
+  key: varchar("key", {
+    enum: [
+      "apiKey",
+      "accessKeyId", 
+      "secretAccessKey",
+      "region",
+      "projectId",
+      "serviceAccountKey"
+    ]
+  }).notNull(),
+  value: text("value").notNull(),
+});
+
+export type ModelConfigCredential = InferSelectModel<typeof modelConfigCredential>;
+
+export const modelConfigSetting = pgTable("ModelConfigSetting", {
+  id: uuid("id").primaryKey().notNull().defaultRandom(),
+  modelConfigId: uuid("modelConfigId")
+    .notNull()
+    .references(() => modelConfig.id, { onDelete: "cascade" }),
+  key: text("key").notNull(), // e.g. dimensions, safePrompt, logitBias etc
+  value: json("value").notNull(), // Store any provider-specific settings as JSON
+});
+
+export type ModelConfigSetting = InferSelectModel<typeof modelConfigSetting>;
+
+export const groupModelAccess = pgTable(
+  "GroupModelAccess",
+  {
+    groupId: uuid("groupId")
+      .notNull()
+      .references(() => group.id, { onDelete: "cascade" }),
+    modelConfigId: uuid("modelConfigId")
+      .notNull()
+      .references(() => modelConfig.id, { onDelete: "cascade" }),
+  },
+  (table) => ({
+    pk: primaryKey({ columns: [table.groupId, table.modelConfigId] }),
+  })
+);
+
+export type GroupModelAccess = InferSelectModel<typeof groupModelAccess>;
 
 export const chat = pgTable("Chat", {
   id: uuid("id").primaryKey().notNull().defaultRandom(),
@@ -193,4 +308,3 @@ export const verifiedUsers = pgTable("VerifiedUsers", {
 });
 
 export type VerifiedUsers = InferSelectModel<typeof verifiedUsers>;
-
