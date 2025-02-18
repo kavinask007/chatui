@@ -5,6 +5,7 @@ import { Overview } from "./overview";
 import { memo } from "react";
 import { Vote } from "@/lib/db/schema";
 import equal from "fast-deep-equal";
+import { Console } from "./console";
 
 interface MessagesProps {
   chatId: string;
@@ -35,7 +36,7 @@ function PureMessages({
   return (
     <div
       ref={messagesContainerRef}
-      className="flex flex-col min-w-0 gap-6 flex-1 overflow-y-scroll pt-4"
+      className="flex flex-col min-w-0 gap-6 flex-1 overflow-y-scroll pt-2"
     >
       {messages.length === 0 && <Overview />}
 
@@ -69,21 +70,10 @@ function PureMessages({
 }
 
 export const Messages = memo(PureMessages, (prevProps, nextProps) => {
-  console.log(
-    prevProps.messages[-1]?.content.length,
-    nextProps.messages[-1]?.content.length
-  );
   if (!prevProps) return false;
   if (prevProps.isBlockVisible && nextProps.isBlockVisible) return true;
-
   if (prevProps.isLoading !== nextProps.isLoading) return false;
   if (prevProps.isLoading && nextProps.isLoading) return false;
-  if (
-    prevProps.messages[-1]?.content.length !==
-    nextProps.messages[-1]?.content.length
-  )
-    return false;
   if (!equal(prevProps.votes, nextProps.votes)) return false;
-
   return true;
 });

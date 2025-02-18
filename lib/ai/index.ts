@@ -3,7 +3,7 @@ import { createAmazonBedrock } from "@ai-sdk/amazon-bedrock";
 import { customMiddleware } from "./custom-middleware";
 import { createGroq } from "@ai-sdk/groq";
 import { createOllama } from "ollama-ai-provider";
-
+import { createMistral } from '@ai-sdk/mistral';
 const createClient = (provider: any) => {
   // Get credentials if they exist
   const credentials = provider?.credentials;
@@ -29,6 +29,8 @@ const createClient = (provider: any) => {
       return createAmazonBedrock(config);
     case "Ollama":
       return createOllama(config);
+    case "mistral":
+      return createMistral(config);
     default:
       return null;
   }

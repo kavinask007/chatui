@@ -42,7 +42,7 @@ const PurePreviewMessage = ({
   isReadonly: boolean;
 }) => {
   const [mode, setMode] = useState<"view" | "edit">("view");
-
+  // console.log(message, isLoading);
   return (
     <AnimatePresence>
       <motion.div
@@ -247,7 +247,7 @@ export const ThinkingMessage = () => {
 
         <div className="flex flex-col gap-2 w-full">
           <div className="flex flex-col gap-4 text-muted-foreground">
-            Thinking...
+            Thinking... (Not really)
           </div>
         </div>
       </div>
