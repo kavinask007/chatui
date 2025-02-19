@@ -1,19 +1,19 @@
-'use server';
+"use server";
 
-import { type CoreUserMessage, generateText } from 'ai';
-import { cookies } from 'next/headers';
+import { type CoreUserMessage, generateText } from "ai";
+import { cookies } from "next/headers";
 
-import { customModel } from '@/lib/ai';
+import { customModel } from "@/lib/ai";
 import {
   deleteMessagesByChatIdAfterTimestamp,
   getMessageById,
   updateChatVisiblityById,
-} from '@/lib/db/queries';
-import { VisibilityType } from '@/components/visibility-selector';
+} from "@/lib/db/queries";
+import { VisibilityType } from "@/components/visibility-selector";
 
 export async function saveModelId(model: string) {
   const cookieStore = await cookies();
-  cookieStore.set('model-id', model);
+  cookieStore.set("model-id", model);
 }
 
 export async function generateTitleFromUserMessage({
@@ -21,6 +21,19 @@ export async function generateTitleFromUserMessage({
 }: {
   message: CoreUserMessage;
 }) {
+  console.log(message);
+  if (typeof message.content === "string") {
+    return message.content.slice(0, 50);
+  }
+
+  // Handle array content case
+  const textContent = message.content.find((item) => item.type === "text");
+  if (textContent && "text" in textContent) {
+    return textContent.text.slice(0, 50);
+  }
+
+  return "New Chat"; // Fallback title if no text content found
+
   const { text: title } = await generateText({
     model: customModel({}),
     system: `\n

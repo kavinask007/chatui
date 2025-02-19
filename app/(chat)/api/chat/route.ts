@@ -3,7 +3,6 @@ import {
   convertToCoreMessages,
   createDataStreamResponse,
   streamObject,
-  streamText,
 } from "ai";
 import { z } from "zod";
 
@@ -30,6 +29,7 @@ import {
   getMostRecentUserMessage,
   sanitizeResponseMessages,
 } from "@/lib/utils";
+import { smoothStream, streamText } from 'ai';
 import { experimental_generateImage as generateImage } from "ai";
 import { fireworks } from "@ai-sdk/fireworks";
 import { generateTitleFromUserMessage } from "../../actions";
@@ -107,7 +107,7 @@ export async function POST(request: Request) {
         system: systemPrompt,
         messages: coreMessages,
         maxSteps: 5,
-        experimental_activeTools: allTools,
+        experimental_transform: smoothStream(),
         // tools: {
         //   getWeather: {
         //     description: 'Get the current weather at a location',
