@@ -21,7 +21,6 @@ const createClient = (provider: any) => {
       }
     });
   }
-  console.log(config)
   switch (provider?.provider?.name) {
     case "Groq":
       return createGroq(config);
