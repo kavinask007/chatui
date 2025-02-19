@@ -48,6 +48,6 @@ export const customModel = (provider: any) => {
 
   return wrapLanguageModel({
     model: client(provider.modelId),
-    // middleware: customMiddleware,
+    middleware: customMiddleware,
   });
 };

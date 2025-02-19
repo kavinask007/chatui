@@ -29,9 +29,8 @@ import {
   getMostRecentUserMessage,
   sanitizeResponseMessages,
 } from "@/lib/utils";
-import { smoothStream, streamText } from 'ai';
+import { smoothStream, streamText } from "ai";
 import { experimental_generateImage as generateImage } from "ai";
-import { fireworks } from "@ai-sdk/fireworks";
 import { generateTitleFromUserMessage } from "../../actions";
 
 export const maxDuration = 60;
@@ -60,7 +59,7 @@ export async function POST(request: Request) {
   }: { id: string; messages: Array<Message>; modelId: string } =
     await request.json();
 
-  const session :any = await auth();
+  const session: any = await auth();
 
   if (!session || !session.user || !session.user.id) {
     return new Response("Unauthorized", { status: 401 });
@@ -72,7 +71,7 @@ export async function POST(request: Request) {
   if (!model) {
     return new Response("Model not found", { status: 404 });
   }
-  console.log(messages[0]["experimental_attachments"])
+  console.log(messages[0]["experimental_attachments"]);
   const coreMessages = convertToCoreMessages(messages);
   const userMessage = getMostRecentUserMessage(coreMessages);
 
@@ -462,7 +461,7 @@ export async function DELETE(request: Request) {
     return new Response("Not Found", { status: 404 });
   }
 
-  const session :any = await auth();
+  const session: any = await auth();
 
   if (!session || !session.user) {
     return new Response("Unauthorized", { status: 401 });
