@@ -11,9 +11,6 @@ importers:
       '@ai-sdk/amazon-bedrock':
         specifier: ^2.0.2
         version: 2.0.2(zod@3.24.2)
-      '@ai-sdk/fireworks':
-        specifier: ^0.1.11
-        version: 0.1.11(zod@3.24.2)
       '@ai-sdk/groq':
         specifier: ^1.1.10
         version: 1.1.10(zod@3.24.2)
@@ -84,8 +81,8 @@ importers:
         specifier: ^0.10.0
         version: 0.10.0
       ai:
-        specifier: ^4.1.43
-        version: 4.1.43(react@19.0.0-rc-45804af1-20241021)(zod@3.24.2)
+        specifier: ^4.1.44
+        version: 4.1.44(react@19.0.0-rc-45804af1-20241021)(zod@3.24.2)
       bcrypt-ts:
         specifier: ^5.0.3
         version: 5.0.3
@@ -273,12 +270,6 @@ packages:
     peerDependencies:
       zod: ^3.0.0
 
-  '@ai-sdk/fireworks@0.1.11':
-    resolution: {integrity: sha512-D/gcOsFoDghN3Igu3tjuHJIYiqumo1aiwmDOLCuHanBcG0yiHjin5Hi7lZqy2+uDRTVdV4uHDqpzcZMbDWEcBA==}
-    engines: {node: '>=18'}
-    peerDependencies:
-      zod: ^3.0.0
-
   '@ai-sdk/groq@1.1.10':
     resolution: {integrity: sha512-SwCxQTW8UMVnvKt4ha19K0WwhpdxSl5unkgCT0uS1/YgFMw7Z+FcE34k9oCawmHBMuTG6Vd6inzIEDgZbPvWTg==}
     engines: {node: '>=18'}
@@ -287,12 +278,6 @@ packages:
 
   '@ai-sdk/mistral@1.1.12':
     resolution: {integrity: sha512-6qoT2gNrwzXPpJ3dJTEYuuYZVXrAGgV9UTqAzzD+ybHuJcoAtdjns3woF7fOuTJ9TcrESpaaD4p7Cg5ZsGgqug==}
-    engines: {node: '>=18'}
-    peerDependencies:
-      zod: ^3.0.0
-
-  '@ai-sdk/openai-compatible@0.1.11':
-    resolution: {integrity: sha512-r9kIDPdKCM1tbZEEKUauGzXp+w1ADrFPPfSxVeVr7of4QIvKzXqLaH/jR/HtdZ1JR5i9uywHijOAZtw7ZcDvQQ==}
     engines: {node: '>=18'}
     peerDependencies:
       zod: ^3.0.0
@@ -1733,8 +1718,8 @@ packages:
     engines: {node: '>=0.4.0'}
     hasBin: true
 
-  ai@4.1.43:
-    resolution: {integrity: sha512-qzHQgT1Icg3/Ck1reDqor3mGqB7PTwbRSfil4k+fzbaPyZQvaJVUOhPruLryfMK4oyGdSEMuLl/uWPpRlVXDvg==}
+  ai@4.1.44:
+    resolution: {integrity: sha512-2THAHlSdZkRemTu7XinH5wckO3QprrniKg31fczgg4RKvsow0OztsLalwcIGoo69S0WN4BErNKkBisT+wXREZg==}
     engines: {node: '>=18'}
     peerDependencies:
       react: ^18 || ^19 || ^19.0.0-rc
@@ -4061,13 +4046,6 @@ snapshots:
       aws4fetch: 1.0.20
       zod: 3.24.2
 
-  '@ai-sdk/fireworks@0.1.11(zod@3.24.2)':
-    dependencies:
-      '@ai-sdk/openai-compatible': 0.1.11(zod@3.24.2)
-      '@ai-sdk/provider': 1.0.8
-      '@ai-sdk/provider-utils': 2.1.9(zod@3.24.2)
-      zod: 3.24.2
-
   '@ai-sdk/groq@1.1.10(zod@3.24.2)':
     dependencies:
       '@ai-sdk/provider': 1.0.8
@@ -4075,12 +4053,6 @@ snapshots:
       zod: 3.24.2
 
   '@ai-sdk/mistral@1.1.12(zod@3.24.2)':
-    dependencies:
-      '@ai-sdk/provider': 1.0.8
-      '@ai-sdk/provider-utils': 2.1.9(zod@3.24.2)
-      zod: 3.24.2
-
-  '@ai-sdk/openai-compatible@0.1.11(zod@3.24.2)':
     dependencies:
       '@ai-sdk/provider': 1.0.8
       '@ai-sdk/provider-utils': 2.1.9(zod@3.24.2)
@@ -5301,7 +5273,7 @@ snapshots:
 
   acorn@8.14.0: {}
 
-  ai@4.1.43(react@19.0.0-rc-45804af1-20241021)(zod@3.24.2):
+  ai@4.1.44(react@19.0.0-rc-45804af1-20241021)(zod@3.24.2):
     dependencies:
       '@ai-sdk/provider': 1.0.8
       '@ai-sdk/provider-utils': 2.1.9(zod@3.24.2)
