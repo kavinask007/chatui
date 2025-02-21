@@ -5,12 +5,12 @@ import { auth } from "@/app/(auth)/auth";
 
 // Configure Minio client
 const minioClient = new Client({
-  endPoint: process.env.MINIO_ENDPOINT || "localhost",
-  port: Number(process.env.MINIO_PORT) || 9000,
-  useSSL: process.env.MINIO_USE_SSL === "true",
-  accessKey: process.env.MINIO_ACCESS_KEY || "mino",
+  endPoint: process.env.MINIO_ENDPOINT || "*",
+  port: Number(process.env.MINIO_PORT) || 80,  
+  useSSL: process.env.MINIO_USE_SSL === "false",
+  accessKey: process.env.MINIO_ACCESS_KEY || "*",
   secretKey:
-    process.env.MINIO_SECRET_KEY || "minio",
+    process.env.MINIO_SECRET_KEY || "*",
 });
 
 const BUCKET_NAME = process.env.MINIO_BUCKET_NAME || "uploads";
@@ -62,6 +62,7 @@ export async function POST(request: Request) {
 
     try {
       // Ensure bucket exists
+      console.log(BUCKET_NAME)
       const bucketExists = await minioClient.bucketExists(BUCKET_NAME);
       if (!bucketExists) {
         await minioClient.makeBucket(BUCKET_NAME);
@@ -81,8 +82,9 @@ export async function POST(request: Request) {
       );
 
       // Generate URL for the uploaded file
-      const url = await minioClient.presignedGetObject(BUCKET_NAME, filename);
-
+      var url = await minioClient.presignedGetObject(BUCKET_NAME, filename);
+      //xix needed for now Replace https with http in presigned URL if present
+      url = url.replace('https://', 'http://');
       return NextResponse.json({
         url,
         pathname: `/${BUCKET_NAME}/${filename}`,

@@ -8,14 +8,13 @@ import { getUserAvailableModels } from "@/lib/db/queries";
 
 export default async function Page() {
   const id = generateUUID();
-  const session = await auth();
+  const session :any = await auth();
 
   const cookieStore = await cookies();
   const modelIdFromCookie = cookieStore.get("model-id")?.value;
 
   // Get available models directly from database
   const models = await getUserAvailableModels(session?.user?.id || "");
-console.log(models)
   const selectedModelId =
     models.find((model) => model.id === modelIdFromCookie)?.id ||
     (models.length > 0 ? models[0].id : "");

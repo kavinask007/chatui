@@ -41,7 +41,6 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
 
   // Get available models directly from database
   const models = await getUserAvailableModels(session?.user?.id || "");
-  console.log(models);
   const selectedModelId =
     models.find((model: any) => model.id === modelIdFromCookie)?.id ||
     (models.length > 0 ? models[0].id : "");

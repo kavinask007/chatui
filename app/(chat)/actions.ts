@@ -21,7 +21,6 @@ export async function generateTitleFromUserMessage({
 }: {
   message: CoreUserMessage;
 }) {
-  console.log(message);
   if (typeof message.content === "string") {
     return message.content.slice(0, 50);
   }

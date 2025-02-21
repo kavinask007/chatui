@@ -71,7 +71,6 @@ export async function POST(request: Request) {
   if (!model) {
     return new Response("Model not found", { status: 404 });
   }
-  console.log(messages[0]["experimental_attachments"]);
   const coreMessages = convertToCoreMessages(messages);
   const userMessage = getMostRecentUserMessage(coreMessages);
 
