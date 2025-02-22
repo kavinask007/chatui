@@ -20,7 +20,7 @@ export const PreviewAttachment = ({
             // eslint-disable-next-line @next/next/no-img-element
             <img
               key={url}
-              src={url}
+              src={url.replace('https://', 'http://')}
               alt={name ?? 'An image attachment'}
               className="rounded-md size-full object-cover"
             />
