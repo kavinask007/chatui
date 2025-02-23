@@ -28,6 +28,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ModelEditor } from "@/components/settings-model-editor";
+import {ToolEditor} from "@/components/settings-tool";
 import {
   Dialog,
   DialogContent,
@@ -341,6 +342,13 @@ export function SettingsComponent({ isAdmin }: { isAdmin: boolean }) {
                   Models
                 </Button>
                 <Button
+                  variant={activeSection === "tools" ? "default" : "ghost"}
+                  className="w-full justify-start"
+                  onClick={() => setActiveSection("tools")}
+                >
+                  Tools
+                </Button>
+                <Button
                   variant={activeSection === "invites" ? "default" : "ghost"}
                   className="w-full justify-start"
                   onClick={() => setActiveSection("invites")}
@@ -569,6 +577,8 @@ export function SettingsComponent({ isAdmin }: { isAdmin: boolean }) {
             )}
 
             {activeSection === "models" && <ModelEditor />}
+
+            {activeSection === "tools" && <ToolEditor />}
 
             {activeSection === "invites" && (
               <div className="space-y-6">

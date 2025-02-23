@@ -24,11 +24,23 @@ import { useLocalStorage, useWindowSize } from "usehooks-ts";
 import { sanitizeUIMessages } from "@/lib/utils";
 
 import { ArrowUpIcon, PaperclipIcon, StopIcon } from "./icons";
+import { BackpackIcon } from "@radix-ui/react-icons";
 import { PreviewAttachment } from "./preview-attachment";
 import { Button } from "./ui/button";
 import { Textarea } from "./ui/textarea";
 import { SuggestedActions } from "./suggested-actions";
 import equal from "fast-deep-equal";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+} from "./ui/dropdown-menu";
+
+interface Tool {
+  id: string;
+  name: string;
+  description: string | null;
+}
 
 function PureMultimodalInput({
   chatId,
@@ -67,6 +79,29 @@ function PureMultimodalInput({
 }) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { width } = useWindowSize();
+  const [tools, setTools] = useState<Tool[]>([]);
+  const [selectedTools, setSelectedTools] = useState<Set<string>>(new Set());
+  const [isToolDialogOpen, setIsToolDialogOpen] = useState(false);
+
+  useEffect(() => {
+    // Fetch available tools
+    const fetchTools = async () => {
+      try {
+        const response = await fetch("/api/settings/tools", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "listUserTools" }),
+        });
+        const data = await response.json();
+        setTools(data.tools);
+        // By default select all tools
+        setSelectedTools(new Set(data.tools.map((t: Tool) => t.id)));
+      } catch (error) {
+        console.error("Failed to fetch tools:", error);
+      }
+    };
+    fetchTools();
+  }, []);
 
   useEffect(() => {
     if (textareaRef.current) {
@@ -114,11 +149,18 @@ function PureMultimodalInput({
 
   const submitForm = useCallback(() => {
     window.history.replaceState({}, "", `/chat/${chatId}`);
-
-    handleSubmit(undefined, {
+    
+    append({
+      role: 'user',
+      content: input,
+    }, {
       experimental_attachments: attachments,
+      data: {
+        tools:"tooldata",
+      },
     });
 
+    setInput("");
     setAttachments([]);
     setLocalStorageInput("");
 
@@ -127,12 +169,15 @@ function PureMultimodalInput({
     }
     adjustHeight();
   }, [
+    input,
     attachments,
-    handleSubmit,
+    append,
+    setInput,
     setAttachments,
     setLocalStorageInput,
     width,
     chatId,
+    selectedTools,
   ]);
 
   const uploadFile = async (file: File) => {
@@ -187,6 +232,18 @@ function PureMultimodalInput({
     },
     [setAttachments]
   );
+
+  const handleToolToggle = (toolId: string) => {
+    setSelectedTools((prev) => {
+      const next = new Set(prev);
+      if (next.has(toolId)) {
+        next.delete(toolId);
+      } else {
+        next.add(toolId);
+      }
+      return next;
+    });
+  };
 
   return (
     <div className="relative w-full flex flex-col gap-4">
@@ -249,8 +306,49 @@ function PureMultimodalInput({
         }}
       />
 
-      <div className="absolute bottom-0 p-2 w-fit flex flex-row justify-start">
+      <div className="absolute bottom-0 p-2 w-fit flex flex-row justify-start gap-2">
         <AttachmentsButton fileInputRef={fileInputRef} isLoading={isLoading} />
+
+        <DropdownMenu
+          open={isToolDialogOpen}
+          onOpenChange={setIsToolDialogOpen}
+        >
+          <DropdownMenuTrigger asChild>
+            <Button
+              className="rounded-md rounded-bl-lg p-[7px] h-fit dark:border-zinc-700 hover:dark:bg-zinc-900 hover:bg-zinc-200"
+              variant="ghost"
+              disabled={isLoading}
+            >
+              <BackpackIcon />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent
+            align="start"
+            className="w-[280px] max-h-[400px] overflow-y-auto"
+          >
+            <div className="grid grid-cols-1 gap-1 p-2">
+              {tools?.map((tool) => (
+                <div
+                  key={tool.id}
+                  className={cx(
+                    "p-2 rounded-lg cursor-pointer transition-colors",
+                    selectedTools.has(tool.id)
+                      ? "bg-green-500/20 hover:bg-green-500/30"
+                      : "hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                  )}
+                  onClick={() => handleToolToggle(tool.id)}
+                >
+                  <div className="font-medium truncate">{tool.name}</div>
+                  {tool.description && (
+                    <div className="text-sm text-zinc-500 break-words">
+                      {tool.description}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       <div className="absolute bottom-0 right-0 p-2 w-fit flex flex-row justify-end">

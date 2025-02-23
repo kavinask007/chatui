@@ -57,6 +57,33 @@ export const userGroup = pgTable(
 
 export type UserGroup = InferSelectModel<typeof userGroup>;
 
+export const tool = pgTable("Tool", {
+  id: uuid("id").primaryKey().notNull().defaultRandom(),
+  name: text("name").notNull(),
+  description: text("description"),
+  configuration: json("configuration").notNull().default({}),
+  createdAt: timestamp("createdAt").notNull().defaultNow(),
+});
+
+export type Tool = InferSelectModel<typeof tool>;
+
+export const groupToolAccess = pgTable(
+  "GroupToolAccess",
+  {
+    groupId: uuid("groupId")
+      .notNull()
+      .references(() => group.id, { onDelete: "cascade" }),
+    toolId: uuid("toolId")
+      .notNull() 
+      .references(() => tool.id, { onDelete: "cascade" }),
+  },
+  (table) => ({
+    pk: primaryKey({ columns: [table.groupId, table.toolId] }),
+  })
+);
+
+export type GroupToolAccess = InferSelectModel<typeof groupToolAccess>;
+
 export const modelProvider = pgTable("ModelProvider", {
   id: uuid("id").primaryKey().notNull().defaultRandom(),
   name: varchar("name", { 

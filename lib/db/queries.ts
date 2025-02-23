@@ -23,6 +23,8 @@ import {
   modelProvider,
   modelConfigCredential,
   modelConfigSetting,
+  tool,
+  groupToolAccess,
 } from "./schema";
 import { BlockKind } from "@/components/block";
 
@@ -667,6 +669,62 @@ export async function removeModelFromGroup({
       );
   } catch (error) {
     console.error("Failed to remove model from group", error);
+    throw error;
+  }
+}
+
+export async function getUserAvailableTools(userId: string) {
+  try {
+    // First check if user is admin
+    const [userRecord] = await db
+      .select({ isAdmin: user.isAdmin })
+      .from(user)
+      .where(eq(user.id, userId));
+
+    // If user is admin, return all tools
+    if (userRecord?.isAdmin) {
+      return await db
+        .select({
+          id: tool.id,
+          name: tool.name,
+          description: tool.description,
+          configuration: tool.configuration,
+          createdAt: tool.createdAt,
+        })
+        .from(tool);
+    }
+
+    // Otherwise, get tools based on user's groups
+    const userGroups = await db
+      .select({
+        groupId: userGroup.groupId,
+      })
+      .from(userGroup)
+      .where(eq(userGroup.userId, userId));
+
+    const groupIds = userGroups.map((g) => g.groupId);
+
+    if (groupIds.length === 0) {
+      return [];
+    }
+
+    // Get tools available to user's groups
+    return await db
+      .select({
+        id: tool.id,
+        name: tool.name,
+        description: tool.description,
+        configuration: tool.configuration,
+        createdAt: tool.createdAt,
+      })
+      .from(tool)
+      .innerJoin(
+        groupToolAccess,
+        eq(groupToolAccess.toolId, tool.id)
+      )
+      .where(inArray(groupToolAccess.groupId, groupIds));
+  } catch (error) {
+    console.error("Failed to get user's available tools", error);
     throw error;
   }
 }

@@ -231,3 +231,12 @@
   scrollbar-width: thin; /* Set the width of the scrollbar */
   scrollbar-color: currentColor transparent; /* Set the color of the scrollbar */
 }
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}

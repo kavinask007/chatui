@@ -20,6 +20,158 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
 import { MessageEditor } from "./message-editor";
 import { DocumentPreview } from "./document-preview";
 
+const ToolDisplay = ({
+  toolInvocation,
+  isReadonly,
+  expandedTools,
+  setExpandedTools,
+}: {
+  toolInvocation: any;
+  isReadonly: boolean;
+  expandedTools: Record<string, boolean>;
+  setExpandedTools: (value: Record<string, boolean>) => void;
+}) => {
+  const { toolName, toolCallId, state, args } = toolInvocation;
+
+  if (state === "result") {
+    const { result } = toolInvocation;
+
+    if (toolName === "getWeather") {
+      return <Weather key={toolCallId} weatherAtLocation={result} />;
+    } else if (toolName === "createDocument") {
+      return (
+        <DocumentPreview
+          key={toolCallId}
+          isReadonly={isReadonly}
+          result={result}
+        />
+      );
+    } else if (toolName === "updateDocument") {
+      return (
+        <DocumentToolResult
+          key={toolCallId}
+          type="update"
+          result={result}
+          isReadonly={isReadonly}
+        />
+      );
+    } else if (toolName === "requestSuggestions") {
+      return (
+        <DocumentToolResult
+          key={toolCallId}
+          type="request-suggestions"
+          result={result}
+          isReadonly={isReadonly}
+        />
+      );
+    } else {
+      // Generic tool result handling
+      let displayResult = result;
+      try {
+        // Handle nested JSON strings
+        if (typeof result === 'object' && result.content) {
+          const content = result.content[0];
+          if (content.type === 'text') {
+            displayResult = JSON.parse(content.text);
+          }
+        }
+      } catch (e) {
+        // If parsing fails, fall back to original result
+        console.error('Failed to parse tool result:', e);
+        displayResult = result;
+      }
+
+      return (
+        <motion.div
+          key={toolCallId}
+          className="border rounded-lg p-4 cursor-pointer hover:bg-muted"
+          onClick={() => {
+            const newExpandedTools: Record<string, boolean> = {
+              ...expandedTools,
+              [toolCallId]: !expandedTools[toolCallId]
+            };
+            setExpandedTools(newExpandedTools);
+          }}
+          animate={{
+            backgroundColor: expandedTools[toolCallId]
+              ? "var(--muted)"
+              : "transparent",
+          }}
+        >
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="flex items-center gap-2 text-green-600"
+          >
+            <SparklesIcon size={14} />
+            <span>Tool invocation succeeded: {toolName}</span>
+          </motion.div>
+
+          {expandedTools[toolCallId] && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              className="mt-2"
+            >
+              <Markdown>{`\`\`\`json\n${JSON.stringify(displayResult, null, 2)}\n\`\`\``}</Markdown>
+            </motion.div>
+          )}
+        </motion.div>
+      );
+    }
+  }
+
+  if (toolName === "getWeather") {
+    return <Weather key={toolCallId} />;
+  } else if (toolName === "createDocument") {
+    return (
+      <DocumentPreview key={toolCallId} isReadonly={isReadonly} args={args} />
+    );
+  } else if (toolName === "updateDocument") {
+    return (
+      <DocumentToolCall
+        key={toolCallId}
+        type="update"
+        args={args}
+        isReadonly={isReadonly}
+      />
+    );
+  } else if (toolName === "requestSuggestions") {
+    return (
+      <DocumentToolCall
+        key={toolCallId}
+        type="request-suggestions"
+        args={args}
+        isReadonly={isReadonly}
+      />
+    );
+  } else {
+    // Generic tool calling state
+    return (
+      <motion.div
+        key={toolCallId}
+        className="border rounded-lg p-4"
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+      >
+        <div className="flex items-center gap-2 text-blue-600">
+          <motion.div
+            animate={{ rotate: 360 }}
+            transition={{
+              duration: 2,
+              repeat: Infinity,
+              ease: "linear",
+            }}
+          >
+            <SparklesIcon size={14} />
+          </motion.div>
+          <span>Invoking tool: {toolName}</span>
+        </div>
+      </motion.div>
+    );
+  }
+};
+
 const PurePreviewMessage = ({
   chatId,
   message,
@@ -42,7 +194,10 @@ const PurePreviewMessage = ({
   isReadonly: boolean;
 }) => {
   const [mode, setMode] = useState<"view" | "edit">("view");
-  // console.log(message, isLoading);
+  const [expandedTools, setExpandedTools] = useState<Record<string, boolean>>(
+    {}
+  );
+
   return (
     <AnimatePresence>
       <motion.div
@@ -126,66 +281,15 @@ const PurePreviewMessage = ({
 
             {message.toolInvocations && message.toolInvocations.length > 0 && (
               <div className="flex flex-col gap-4">
-                {message.toolInvocations.map((toolInvocation) => {
-                  const { toolName, toolCallId, state, args } = toolInvocation;
-
-                  if (state === "result") {
-                    const { result } = toolInvocation;
-
-                    return (
-                      <div key={toolCallId}>
-                        {toolName === "getWeather" ? (
-                          <Weather weatherAtLocation={result} />
-                        ) : toolName === "createDocument" ? (
-                          <DocumentPreview
-                            isReadonly={isReadonly}
-                            result={result}
-                          />
-                        ) : toolName === "updateDocument" ? (
-                          <DocumentToolResult
-                            type="update"
-                            result={result}
-                            isReadonly={isReadonly}
-                          />
-                        ) : toolName === "requestSuggestions" ? (
-                          <DocumentToolResult
-                            type="request-suggestions"
-                            result={result}
-                            isReadonly={isReadonly}
-                          />
-                        ) : (
-                          <pre>{JSON.stringify(result, null, 2)}</pre>
-                        )}
-                      </div>
-                    );
-                  }
-                  return (
-                    <div
-                      key={toolCallId}
-                      className={cx({
-                        skeleton: ["getWeather"].includes(toolName),
-                      })}
-                    >
-                      {toolName === "getWeather" ? (
-                        <Weather />
-                      ) : toolName === "createDocument" ? (
-                        <DocumentPreview isReadonly={isReadonly} args={args} />
-                      ) : toolName === "updateDocument" ? (
-                        <DocumentToolCall
-                          type="update"
-                          args={args}
-                          isReadonly={isReadonly}
-                        />
-                      ) : toolName === "requestSuggestions" ? (
-                        <DocumentToolCall
-                          type="request-suggestions"
-                          args={args}
-                          isReadonly={isReadonly}
-                        />
-                      ) : null}
-                    </div>
-                  );
-                })}
+                {message.toolInvocations.map((toolInvocation) => (
+                  <ToolDisplay
+                    key={toolInvocation.toolCallId}
+                    toolInvocation={toolInvocation}
+                    isReadonly={isReadonly}
+                    expandedTools={expandedTools}
+                    setExpandedTools={setExpandedTools}
+                  />
+                ))}
               </div>
             )}
 
