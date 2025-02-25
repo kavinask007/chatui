@@ -11,14 +11,14 @@ const db = drizzle(client);
 
 export async function POST(request: Request) {
   const session: any = await auth();
-
-  if (!session?.user?.isAdmin) {
-    return Response.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
   const body = await request.json();
   const { action } = body;
 
+  if (!session?.user?.isAdmin && body.action !== "listUserTools") {
+    return Response.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+ 
   try {
     switch (action) {
       case "listTools": {
@@ -97,6 +97,28 @@ export async function POST(request: Request) {
           .where(eq(tool.id, toolId));
 
         return Response.json({ message: "Tool configuration updated successfully" });
+      }
+
+      case "deleteTool": {
+        const { toolId } = body;
+        if (!toolId) {
+          return Response.json(
+            { error: "Tool ID is required" },
+            { status: 400 }
+          );
+        }
+
+        // First delete any group access entries for this tool
+        await db
+          .delete(groupToolAccess)
+          .where(eq(groupToolAccess.toolId, toolId));
+
+        // Then delete the tool itself
+        await db
+          .delete(tool)
+          .where(eq(tool.id, toolId));
+
+        return Response.json({ message: "Tool deleted successfully" });
       }
 
       case "assignToolToGroup": {

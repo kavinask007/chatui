@@ -7,7 +7,7 @@ import type {
   Message,
 } from "ai";
 import cx from "classnames";
-import type React from "react";
+import React from "react";
 import {
   useRef,
   useEffect,
@@ -24,7 +24,7 @@ import { useLocalStorage, useWindowSize } from "usehooks-ts";
 import { sanitizeUIMessages } from "@/lib/utils";
 
 import { ArrowUpIcon, PaperclipIcon, StopIcon } from "./icons";
-import { BackpackIcon } from "@radix-ui/react-icons";
+import { CubeIcon } from "@radix-ui/react-icons";
 import { PreviewAttachment } from "./preview-attachment";
 import { Button } from "./ui/button";
 import { Textarea } from "./ui/textarea";
@@ -35,6 +35,8 @@ import {
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu";
+import { Separator } from "./ui/separator";
+import { Skeleton } from "./ui/skeleton";
 
 interface Tool {
   id: string;
@@ -80,12 +82,17 @@ function PureMultimodalInput({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { width } = useWindowSize();
   const [tools, setTools] = useState<Tool[]>([]);
-  const [selectedTools, setSelectedTools] = useState<Set<string>>(new Set());
+  const [isToolsLoading, setIsToolsLoading] = useState(true);
+  const [selectedTools, setSelectedTools] = useLocalStorage<string[]>(
+    "selected-tools",
+    []
+  );
   const [isToolDialogOpen, setIsToolDialogOpen] = useState(false);
 
   useEffect(() => {
     // Fetch available tools
     const fetchTools = async () => {
+      setIsToolsLoading(true);
       try {
         const response = await fetch("/api/settings/tools", {
           method: "POST",
@@ -94,14 +101,35 @@ function PureMultimodalInput({
         });
         const data = await response.json();
         setTools(data.tools);
-        // By default select all tools
-        setSelectedTools(new Set(data.tools.map((t: Tool) => t.id)));
+        
+        // Update selected tools from localStorage to only include available tools
+        const availableToolIds = new Set(data.tools.map((t: Tool) => t.id));
+        const currentSelectedTools: string[] = [];
+        
+        // If no tools were previously selected, select all by default
+        if (!selectedTools || selectedTools.length === 0) {
+          data.tools.forEach((tool: Tool) => {
+            currentSelectedTools.push(tool.id);
+          });
+        } else {
+          // Otherwise, only keep the selected tools that are still available
+          selectedTools.forEach((toolId) => {
+            if (availableToolIds.has(toolId)) {
+              currentSelectedTools.push(toolId);
+            }
+          });
+        }
+        
+        setSelectedTools(currentSelectedTools);
       } catch (error) {
         console.error("Failed to fetch tools:", error);
+      } finally {
+        setIsToolsLoading(false);
       }
     };
+    
     fetchTools();
-  }, []);
+  }, [setSelectedTools]); // Removed selectedTools from dependency array to prevent infinite loop
 
   useEffect(() => {
     if (textareaRef.current) {
@@ -149,16 +177,17 @@ function PureMultimodalInput({
 
   const submitForm = useCallback(() => {
     window.history.replaceState({}, "", `/chat/${chatId}`);
-    
-    append({
-      role: 'user',
-      content: input,
-    }, {
-      experimental_attachments: attachments,
-      data: {
-        tools:"tooldata",
+
+    append(
+      {
+        role: "user",
+        content: input,
       },
-    });
+      {
+        experimental_attachments: attachments,
+        body: { tools_selected: selectedTools },
+      }
+    );
 
     setInput("");
     setAttachments([]);
@@ -235,13 +264,12 @@ function PureMultimodalInput({
 
   const handleToolToggle = (toolId: string) => {
     setSelectedTools((prev) => {
-      const next = new Set(prev);
-      if (next.has(toolId)) {
-        next.delete(toolId);
+      const prevArray = Array.isArray(prev) ? prev : [];
+      if (prevArray.includes(toolId)) {
+        return prevArray.filter(id => id !== toolId);
       } else {
-        next.add(toolId);
+        return [...prevArray, toolId];
       }
-      return next;
     });
   };
 
@@ -250,7 +278,11 @@ function PureMultimodalInput({
       {messages.length === 0 &&
         attachments.length === 0 &&
         uploadQueue.length === 0 && (
-          <SuggestedActions append={append} chatId={chatId} />
+          <SuggestedActions
+            append={append}
+            chatId={chatId}
+            selectedTools={selectedTools}
+          />
         )}
 
       <input
@@ -315,38 +347,50 @@ function PureMultimodalInput({
         >
           <DropdownMenuTrigger asChild>
             <Button
-              className="rounded-md rounded-bl-lg p-[7px] h-fit dark:border-zinc-700 hover:dark:bg-zinc-900 hover:bg-zinc-200"
+              className="rounded-full p-[7px] h-fit dark:border-zinc-700 hover:dark:bg-zinc-900 hover:bg-zinc-200"
               variant="ghost"
               disabled={isLoading}
             >
-              <BackpackIcon />
+              <CubeIcon />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent
             align="start"
-            className="w-[280px] max-h-[400px] overflow-y-auto"
+            className="w-[280px] max-h-[300px] overflow-y-auto rounded-xl"
           >
-            <div className="grid grid-cols-1 gap-1 p-2">
-              {tools?.map((tool) => (
-                <div
-                  key={tool.id}
-                  className={cx(
-                    "p-2 rounded-lg cursor-pointer transition-colors",
-                    selectedTools.has(tool.id)
-                      ? "bg-green-500/20 hover:bg-green-500/30"
-                      : "hover:bg-zinc-100 dark:hover:bg-zinc-800"
-                  )}
-                  onClick={() => handleToolToggle(tool.id)}
-                >
-                  <div className="font-medium truncate">{tool.name}</div>
-                  {tool.description && (
-                    <div className="text-sm text-zinc-500 break-words">
-                      {tool.description}
+            {isToolsLoading ? (
+              <div className="flex flex-col gap-2 p-4">
+                <Skeleton className="h-[60px] w-full rounded-xl" />
+                <Skeleton className="h-[60px] w-full rounded-xl" />
+                <Skeleton className="h-[60px] w-full rounded-xl" />
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 gap-2 p-2">
+                {tools?.map((tool, index) => (
+                  <React.Fragment key={tool.id}>
+                    <div
+                      className={cx(
+                        "p-2 rounded-xl cursor-pointer transition-colors h-[60px] flex flex-col justify-center overflow-hidden",
+                        Array.isArray(selectedTools) && selectedTools.includes(tool.id)
+                          ? "bg-green-500/20 hover:bg-green-500/30"
+                          : "hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                      )}
+                      onClick={() => handleToolToggle(tool.id)}
+                    >
+                      <div className="font-medium truncate">{tool.name}</div>
+                      {tool.description && (
+                        <div className="text-sm text-zinc-500 truncate">
+                          {tool.description}
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
-              ))}
-            </div>
+                    {index < tools.length - 1 && (
+                      <Separator className="my-1" />
+                    )}
+                  </React.Fragment>
+                ))}
+              </div>
+            )}
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
@@ -386,7 +430,7 @@ function PureAttachmentsButton({
 }) {
   return (
     <Button
-      className="rounded-md rounded-bl-lg p-[7px] h-fit dark:border-zinc-700 hover:dark:bg-zinc-900 hover:bg-zinc-200"
+      className="rounded-full p-[7px] h-fit dark:border-zinc-700 hover:dark:bg-zinc-900 hover:bg-zinc-200"
       onClick={(event) => {
         event.preventDefault();
         fileInputRef.current?.click();

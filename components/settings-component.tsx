@@ -1,4 +1,6 @@
 "use client";
+
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,7 +30,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ModelEditor } from "@/components/settings-model-editor";
-import {ToolEditor} from "@/components/settings-tool";
+import { ToolEditor } from "@/components/settings-tool";
+import { GroupsEditor } from "@/components/settings-group-editor";
 import {
   Dialog,
   DialogContent,
@@ -36,7 +39,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Loader2 } from "lucide-react";
+import { ArrowLeft, Loader2 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { useRouter } from "next/navigation";
 
@@ -77,19 +80,8 @@ export function SettingsComponent({ isAdmin }: { isAdmin: boolean }) {
   const [groups, setGroups] = useState<Group[]>([]);
   const [models, setModels] = useState<Model[]>([]);
   const [invitedUsers, setInvitedUsers] = useState<InvitedUser[]>([]);
-  const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
-  const [groupUsers, setGroupUsers] = useState<User[]>([]);
   const [email, setEmail] = useState("");
-  const [groupName, setGroupName] = useState("");
-  const [groupDescription, setGroupDescription] = useState("");
-  const [modelName, setModelName] = useState("");
-  const [modelProvider, setModelProvider] = useState("");
-  const [modelApiId, setModelApiId] = useState("");
-  const [modelApiKey, setModelApiKey] = useState("");
-  const [modelDescription, setModelDescription] = useState("");
   const [loading, setLoading] = useState(true);
-  const [isCreatingGroup, setIsCreatingGroup] = useState(false);
-  const [isCreatingModel, setIsCreatingModel] = useState(false);
   const [isInviting, setIsInviting] = useState(false);
   const [activeSection, setActiveSection] = useState("users");
 
@@ -98,12 +90,6 @@ export function SettingsComponent({ isAdmin }: { isAdmin: boolean }) {
       () => setLoading(false)
     );
   }, []);
-
-  useEffect(() => {
-    if (selectedGroup) {
-      fetchGroupUsers(selectedGroup);
-    }
-  }, [selectedGroup]);
 
   const fetchUsers = async () => {
     try {
@@ -116,48 +102,6 @@ export function SettingsComponent({ isAdmin }: { isAdmin: boolean }) {
       setUsers(data.users);
     } catch (error) {
       toast.error("Failed to fetch users");
-    }
-  };
-
-  const handleCreateModel = async () => {
-    try {
-      setIsCreatingModel(true);
-      const response = await fetch("/api/settings/models", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: modelName,
-          provider: modelProvider,
-          apiIdentifier: modelApiId,
-          apiKey: modelApiKey,
-          description: modelDescription,
-        }),
-      });
-
-      if (!response.ok) throw new Error("Failed to create model");
-      toast.success("Model created successfully");
-      setModelName("");
-      setModelProvider("");
-      setModelApiId("");
-      setModelApiKey("");
-      setModelDescription("");
-    } catch (error) {
-      toast.error("Failed to create model");
-    } finally {
-      setIsCreatingModel(false);
-    }
-  };
-
-  const fetchGroupUsers = async (groupId: string) => {
-    try {
-      const response = await fetch(`/api/settings`, {
-        method: "POST",
-        body: JSON.stringify({ action: "listGroupUsers" }),
-      });
-      const data = await response.json();
-      setGroupUsers(data.users);
-    } catch (error) {
-      toast.error("Failed to fetch group users");
     }
   };
 
@@ -208,31 +152,6 @@ export function SettingsComponent({ isAdmin }: { isAdmin: boolean }) {
     }
   };
 
-  const handleCreateGroup = async () => {
-    try {
-      setIsCreatingGroup(true);
-      const response = await fetch("/api/settings", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          action: "createGroup",
-          name: groupName,
-          description: groupDescription,
-        }),
-      });
-
-      if (!response.ok) throw new Error("Failed to create group");
-      toast.success("Group created successfully");
-      setGroupName("");
-      setGroupDescription("");
-      await fetchGroups();
-    } catch (error) {
-      toast.error("Failed to create group");
-    } finally {
-      setIsCreatingGroup(false);
-    }
-  };
-
   const handleAddUserToGroup = async (userId: string, groupId: string) => {
     try {
       const response = await fetch("/api/settings", {
@@ -250,39 +169,9 @@ export function SettingsComponent({ isAdmin }: { isAdmin: boolean }) {
       toast.success("User added to group");
 
       // Update all data to reflect changes
-      await Promise.all([
-        fetchUsers(),
-        fetchGroups(),
-        selectedGroup && fetchGroupUsers(selectedGroup),
-      ]);
+      await Promise.all([fetchUsers(), fetchGroups()]);
     } catch (error) {
       toast.error("Failed to add user to group");
-    }
-  };
-
-  const handleRemoveUserFromGroup = async (userId: string, groupId: string) => {
-    try {
-      const response = await fetch("/api/settings", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          action: "removeUserFromGroup",
-          userId,
-          groupId,
-        }),
-      });
-
-      if (!response.ok) throw new Error("Failed to remove user from group");
-      toast.success("User removed from group");
-
-      // Update all data to reflect changes
-      await Promise.all([
-        fetchUsers(),
-        fetchGroups(),
-        selectedGroup && fetchGroupUsers(selectedGroup),
-      ]);
-    } catch (error) {
-      toast.error("Failed to remove user from group");
     }
   };
 
@@ -311,14 +200,15 @@ export function SettingsComponent({ isAdmin }: { isAdmin: boolean }) {
           {/* Sidebar Navigation */}
           <div className="w-64 shrink-0">
             <nav className="space-y-2 sticky top-8">
-              <span className="text-lg font-semibold mb-4">Settings</span>
               <Button
-                variant="outline"
-                className="mb-8"
+                variant="ghost"
+                className="w-full justify-start gap-2 text-muted-foreground hover:text-foreground"
                 onClick={() => router.push("/")}
               >
-                Back to Home
+                <ArrowLeft className="h-4 w-4" />
+             Back to Home  
               </Button>
+              
               <div className="space-y-1">
                 <Button
                   variant={activeSection === "users" ? "default" : "ghost"}
@@ -437,144 +327,7 @@ export function SettingsComponent({ isAdmin }: { isAdmin: boolean }) {
               </div>
             )}
 
-            {activeSection === "groups" && (
-              <div className="space-y-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h1 className="text-3xl font-bold tracking-tight">
-                      Groups
-                    </h1>
-                    <p className="text-muted-foreground">
-                      Manage user groups and permissions
-                    </p>
-                  </div>
-                  <Dialog>
-                    <DialogTrigger asChild>
-                      <Button>Create New Group</Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                      <DialogHeader>
-                        <DialogTitle>Create New Group</DialogTitle>
-                      </DialogHeader>
-                      <div className="space-y-4 py-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="groupName">Group Name</Label>
-                          <Input
-                            id="groupName"
-                            value={groupName}
-                            onChange={(e) => setGroupName(e.target.value)}
-                            placeholder="Group name"
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="groupDescription">Description</Label>
-                          <Textarea
-                            id="groupDescription"
-                            value={groupDescription}
-                            onChange={(e) =>
-                              setGroupDescription(e.target.value)
-                            }
-                            placeholder="Group description"
-                          />
-                        </div>
-                        <Button
-                          className="w-full"
-                          onClick={handleCreateGroup}
-                          disabled={isCreatingGroup}
-                        >
-                          {isCreatingGroup && (
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          )}
-                          Create Group
-                        </Button>
-                      </div>
-                    </DialogContent>
-                  </Dialog>
-                </div>
-                <Separator />
-                <div className="grid gap-6">
-                  {groups.map((group) => (
-                    <Card key={group.id}>
-                      <CardHeader>
-                        <CardTitle>{group.name}</CardTitle>
-                        <CardDescription>{group.description}</CardDescription>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="flex items-center justify-between">
-                          <div className="space-y-1">
-                            <p className="text-sm text-muted-foreground">
-                              Created{" "}
-                              {new Date(group.createdAt).toLocaleDateString()}
-                            </p>
-                            <p className="text-sm text-muted-foreground">
-                              {
-                                users.filter((u) => u.groups.includes(group.id))
-                                  .length
-                              }{" "}
-                              members
-                            </p>
-                          </div>
-                          <Dialog>
-                            <DialogTrigger asChild>
-                              <Button
-                                variant="outline"
-                                onClick={() => setSelectedGroup(group.id)}
-                              >
-                                Manage Members
-                              </Button>
-                            </DialogTrigger>
-                            <DialogContent className="max-w-3xl">
-                              <DialogHeader>
-                                <DialogTitle>
-                                  {group.name} - Members
-                                </DialogTitle>
-                              </DialogHeader>
-                              <div className="mt-4">
-                                <Table>
-                                  <TableHeader>
-                                    <TableRow>
-                                      <TableHead>Name</TableHead>
-                                      <TableHead>Email</TableHead>
-                                      <TableHead>Role</TableHead>
-                                      <TableHead>Actions</TableHead>
-                                    </TableRow>
-                                  </TableHeader>
-                                  <TableBody>
-                                    {groupUsers.map((user) => (
-                                      <TableRow key={user.id}>
-                                        <TableCell>{user.name}</TableCell>
-                                        <TableCell>{user.email}</TableCell>
-                                        <TableCell>
-                                          {user.role || "Member"}
-                                        </TableCell>
-                                        <TableCell>
-                                          <Button
-                                            variant="destructive"
-                                            size="sm"
-                                            onClick={() =>
-                                              handleRemoveUserFromGroup(
-                                                user.id,
-                                                group.id
-                                              )
-                                            }
-                                          >
-                                            Remove
-                                          </Button>
-                                        </TableCell>
-                                      </TableRow>
-                                    ))}
-                                  </TableBody>
-                                </Table>
-                              </div>
-                            </DialogContent>
-                          </Dialog>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              </div>
-            )}
+            {activeSection === "groups" && <GroupsEditor />}
 
             {activeSection === "models" && <ModelEditor />}
 
@@ -638,7 +391,9 @@ export function SettingsComponent({ isAdmin }: { isAdmin: boolean }) {
                         {invitedUsers.map((user) => (
                           <TableRow key={user.email}>
                             <TableCell>{user.email}</TableCell>
-                            <TableCell>Pending</TableCell>
+                            <TableCell>
+                              {users.some(u => u.email === user.email) ? "Joined" : "Pending"}
+                            </TableCell>
                           </TableRow>
                         ))}
                       </TableBody>

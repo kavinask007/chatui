@@ -19,7 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Loader2, MoreVertical, Plus } from "lucide-react";
+import { Loader2, MoreVertical, Plus, Search, X } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -75,6 +75,7 @@ export function ModelEditor() {
   const [loading, setLoading] = useState(true);
   const [isCreating, setIsCreating] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
 
   // Form state
   const [name, setName] = useState("");
@@ -236,6 +237,43 @@ export function ModelEditor() {
     }
   };
 
+  const handleRemoveModelFromGroup = async (modelId: string, groupId: string) => {
+    try {
+      const response = await fetch("/api/settings/model", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "removeModelFromGroup",
+          modelId,
+          groupId,
+        }),
+      });
+
+      if (!response.ok) throw new Error("Failed to remove model from group");
+
+      // Update models state to remove the group
+      setModels(prevModels => prevModels.map(model => {
+        if (model.id === modelId) {
+          return {
+            ...model,
+            groups: model.groups.filter(g => g !== groupId)
+          };
+        }
+        return model;
+      }));
+
+      toast.success("Model removed from group successfully");
+    } catch (error) {
+      toast.error("Failed to remove model from group");
+    }
+  };
+
+  const filteredModels = models.filter(model => 
+    model.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    model.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    model.modelId.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   if (loading) {
     return <Loader2 className="h-4 w-4 animate-spin" />;
   }
@@ -340,8 +378,18 @@ export function ModelEditor() {
         </Dialog>
       </div>
 
+      <div className="relative">
+        <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+        <Input
+          placeholder="Search models..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="pl-9"
+        />
+      </div>
+
       <div className="space-y-4">
-        {models.map((model) => (
+        {filteredModels.map((model) => (
           <Card key={model.id}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <div>
@@ -391,14 +439,25 @@ export function ModelEditor() {
                   <p className="font-medium">Groups:</p>
                   {model.groups.length > 0 ? (
                     <div className="flex flex-wrap gap-2 mt-1">
-                      {model.groups.map((group) => (
-                        <span
-                          key={group}
-                          className="bg-secondary px-2 py-1 rounded-md text-xs"
-                        >
-                          {group}
-                        </span>
-                      ))}
+                      {model.groups.map((groupId) => {
+                        const group = groups.find(g => g.id === groupId);
+                        return (
+                          <div
+                            key={groupId}
+                            className="bg-secondary px-2 py-1 rounded-md text-xs flex items-center gap-1"
+                          >
+                            <span>{group ? group.name : groupId}</span>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-4 w-4 p-0 hover:bg-destructive hover:text-destructive-foreground"
+                              onClick={() => handleRemoveModelFromGroup(model.id, groupId)}
+                            >
+                              <X className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        );
+                      })}
                     </div>
                   ) : (
                     <p className="text-muted-foreground text-xs mt-1">

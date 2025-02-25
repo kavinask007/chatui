@@ -57,6 +57,19 @@ export async function POST(request: Request) {
         return Response.json({ message: "Group created successfully" });
       }
 
+      case "removeGroup": {
+        const { groupId } = body;
+        if (!groupId) {
+          return Response.json(
+            { error: "Group ID is required" },
+            { status: 400 }
+          );
+        }
+
+        await db.delete(group).where(eq(group.id, groupId));
+        return Response.json({ message: "Group removed successfully" });
+      }
+
       case "addUserToGroup": {
         const { userId, groupId, role } = body;
         if (!userId || !groupId) {

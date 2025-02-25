@@ -54,14 +54,19 @@ const weatherTools: AllowedTools[] = ["getWeather"];
 const allTools: AllowedTools[] = [...blocksTools, ...weatherTools];
 
 export async function POST(request: Request) {
-  // console.log(await request.json());
+  const requestData = await request.json();
+  console.log(requestData);
   const {
     id,
     messages,
     modelId,
-  }: { id: string; messages: Array<Message>; modelId: string } =
-    await request.json();
-  console.log(messages[0]["parts"]);
+    tools_selected,
+  }: {
+    id: string;
+    messages: Array<Message>;
+    modelId: string;
+    tools_selected: string[] | undefined;
+  } = requestData;
   const session: any = await auth();
 
   if (!session || !session.user || !session.user.id) {
@@ -98,13 +103,20 @@ export async function POST(request: Request) {
 
   // Get available tools and their configurations
   const availableTools = await getUserAvailableTools(session.user.id);
-  const toolConfigurations = availableTools.reduce((acc, tool) => {
-    acc[tool.name] = tool.configuration;
-    return acc;
-  }, {} as Record<string, any>);
-
+  console.log(tools_selected)
+  const selectedToolConfigurations = availableTools
+    .filter((tool) => tools_selected?.includes(tool.id))
+    .reduce((acc, tool) => {
+      acc[tool.name] = tool.configuration;
+      return acc;
+    }, {} as Record<string, any>);
+  // const toolConfigurations = availableTools.reduce((acc, tool) => {
+  //   acc[tool.name] = tool.configuration;
+  //   return acc;
+  // }, {} as Record<string, any>);
+console.log(selectedToolConfigurations)
   const toolSet = await createToolSet({
-    mcpServers: toolConfigurations,
+    mcpServers: selectedToolConfigurations,
   });
 
   return createDataStreamResponse({

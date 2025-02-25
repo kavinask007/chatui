@@ -19,7 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Loader2, MoreVertical, Plus } from "lucide-react";
+import { Loader2, MoreVertical, Plus, Trash } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -35,6 +35,16 @@ import {
   DialogTrigger,
   DialogFooter,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface Tool {
   id: string;
@@ -57,6 +67,8 @@ export function ToolEditor() {
   const [groups, setGroups] = useState<Group[]>([]);
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [toolToDelete, setToolToDelete] = useState<string | null>(null);
 
   // Form state
   const [name, setName] = useState("");
@@ -198,6 +210,30 @@ export function ToolEditor() {
     }
   };
 
+  const handleDeleteTool = async () => {
+    if (!toolToDelete) return;
+    
+    try {
+      const response = await fetch("/api/settings/tools", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "deleteTool",
+          toolId: toolToDelete,
+        }),
+      });
+
+      if (!response.ok) throw new Error("Failed to delete tool");
+
+      toast.success("Tool deleted successfully");
+      setIsDeleteDialogOpen(false);
+      setToolToDelete(null);
+      await fetchTools();
+    } catch (error) {
+      toast.error("Failed to delete tool");
+    }
+  };
+
   if (loading) {
     return <Loader2 className="h-4 w-4 animate-spin" />;
   }
@@ -258,6 +294,23 @@ export function ToolEditor() {
         </Dialog>
       </div>
 
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the tool and remove it from all groups.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteTool} className="bg-destructive text-destructive-foreground">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <div className="space-y-4">
         {tools?.map((tool) => (
           <Card key={tool.id}>
@@ -286,6 +339,16 @@ export function ToolEditor() {
                       ))}
                     </SelectContent>
                   </Select>
+                  <DropdownMenuItem 
+                    className="text-destructive focus:text-destructive"
+                    onClick={() => {
+                      setToolToDelete(tool.id);
+                      setIsDeleteDialogOpen(true);
+                    }}
+                  >
+                    <Trash className="h-4 w-4 mr-2" />
+                    Delete Tool
+                  </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             </CardHeader>

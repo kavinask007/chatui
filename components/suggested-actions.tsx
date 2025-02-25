@@ -1,39 +1,44 @@
-'use client';
+"use client";
 
-import { motion } from 'framer-motion';
-import { Button } from './ui/button';
-import { ChatRequestOptions, CreateMessage, Message } from 'ai';
-import { memo } from 'react';
+import { motion } from "framer-motion";
+import { Button } from "./ui/button";
+import { ChatRequestOptions, CreateMessage, Message } from "ai";
+import { memo } from "react";
 
 interface SuggestedActionsProps {
   chatId: string;
   append: (
     message: Message | CreateMessage,
-    chatRequestOptions?: ChatRequestOptions,
+    chatRequestOptions?: ChatRequestOptions
   ) => Promise<string | null | undefined>;
+  selectedTools: any[];
 }
 
-function PureSuggestedActions({ chatId, append }: SuggestedActionsProps) {
+function PureSuggestedActions({
+  chatId,
+  append,
+  selectedTools,
+}: SuggestedActionsProps) {
   const suggestedActions = [
     {
-      title: 'What are the advantages',
-      label: 'of using Next.js?',
-      action: 'What are the advantages of using Next.js?',
+      title: "What are the advantages",
+      label: "of using Next.js?",
+      action: "What are the advantages of using Next.js?",
     },
     {
-      title: 'Write code that',
+      title: "Write code that",
       label: `demonstrates djikstra's algorithm`,
       action: `Write code that demonstrates djikstra's algorithm`,
     },
     {
-      title: 'Help me write an essay',
+      title: "Help me write an essay",
       label: `about silicon valley`,
       action: `Help me write an essay about silicon valley`,
     },
     {
-      title: 'What is the weather',
-      label: 'in San Francisco?',
-      action: 'What is the weather in San Francisco?',
+      title: "What is the weather",
+      label: "in San Francisco?",
+      action: "What is the weather in San Francisco?",
     },
   ];
 
@@ -46,17 +51,20 @@ function PureSuggestedActions({ chatId, append }: SuggestedActionsProps) {
           exit={{ opacity: 0, y: 20 }}
           transition={{ delay: 0.05 * index }}
           key={`suggested-action-${suggestedAction.title}-${index}`}
-          className={index > 1 ? 'hidden sm:block' : 'block'}
+          className={index > 1 ? "hidden sm:block" : "block"}
         >
           <Button
             variant="ghost"
             onClick={async () => {
-              window.history.replaceState({}, '', `/chat/${chatId}`);
+              window.history.replaceState({}, "", `/chat/${chatId}`);
 
-              append({
-                role: 'user',
-                content: suggestedAction.action,
-              });
+              append(
+                {
+                  role: "user",
+                  content: suggestedAction.action,
+                },
+                { data: { selected_tools: selectedTools} }
+              );
             }}
             className="text-left border rounded-xl px-4 py-3.5 text-sm flex-1 gap-1 sm:flex-col w-full h-auto justify-start items-start"
           >
@@ -71,4 +79,9 @@ function PureSuggestedActions({ chatId, append }: SuggestedActionsProps) {
   );
 }
 
-export const SuggestedActions = memo(PureSuggestedActions, () => true);
+export const SuggestedActions = memo(
+  PureSuggestedActions,
+  (prevProps, nextProps) => {
+    return prevProps.selectedTools === nextProps.selectedTools;
+  }
+);
