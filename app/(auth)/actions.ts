@@ -82,9 +82,17 @@ export const register = async (
     return { status: "failed" };
   }
 };
+
 export const ProviderLogin = async (
   _: LoginActionState
 ): Promise<LoginActionState> => {
   await signIn("google", { callbackUrl: "/", redirectTo: "/" });
+  return { status: "in_progress" };
+};
+
+export const Auth0Login = async (
+  _: LoginActionState
+): Promise<LoginActionState> => {
+  await signIn("auth0", { callbackUrl: "/", redirectTo: "/" });
   return { status: "in_progress" };
 };

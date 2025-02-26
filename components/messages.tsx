@@ -70,9 +70,11 @@ function PureMessages({
 }
 
 export const Messages = memo(PureMessages, (prevProps, nextProps) => {
+  // console.log(prevProps,nextProps)
+  return false;
   if (!prevProps) return false;
-  if (prevProps.isBlockVisible && nextProps.isBlockVisible) return true;
-  if (prevProps.isLoading !== nextProps.isLoading) return false;
+  // if (prevProps.isBlockVisible && nextProps.isBlockVisible) return true;
+  // if (prevProps.isLoading !== nextProps.isLoading) return false;
   if (prevProps.isLoading && nextProps.isLoading) return false;
   if (!equal(prevProps.votes, nextProps.votes)) return false;
   return true;

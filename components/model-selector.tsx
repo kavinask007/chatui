@@ -26,7 +26,6 @@ export function ModelSelector({
   const [open, setOpen] = useState(false);
   const [optimisticModelId, setOptimisticModelId] =
     useOptimistic(selectedModelId);
-  console.log(availablemodels);
   const selectedModel = useMemo(
     () => availablemodels?.find((model: any) => model.id === optimisticModelId),
     [optimisticModelId]
@@ -42,38 +41,44 @@ export function ModelSelector({
         )}
       >
         <Button variant="outline" className="md:px-2 md:h-[34px]">
-          {selectedModel?.name}
+          {selectedModel?.name || "No models"}
           <ChevronDownIcon />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="min-w-[300px]">
-        {availablemodels?.map((model: any) => (
-          <DropdownMenuItem
-            key={model.id}
-            onSelect={() => {
-              setOpen(false);
+        {availablemodels?.length > 0 ? (
+          availablemodels.map((model: any) => (
+            <DropdownMenuItem
+              key={model.id}
+              onSelect={() => {
+                setOpen(false);
 
-              startTransition(() => {
-                setOptimisticModelId(model.id);
-                saveModelId(model.id);
-              });
-            }}
-            className="gap-4 group/item flex flex-row justify-between items-center"
-            data-active={model.id === optimisticModelId}
-          >
-            <div className="flex flex-col gap-1 items-start">
-              {model.name}
-              {model.description && (
-                <div className="text-xs text-muted-foreground">
-                  {model.description}
-                </div>
-              )}
-            </div>
-            <div className="text-foreground dark:text-foreground opacity-0 group-data-[active=true]/item:opacity-100">
-              <CheckCircleFillIcon />
-            </div>
-          </DropdownMenuItem>
-        ))}
+                startTransition(() => {
+                  setOptimisticModelId(model.id);
+                  saveModelId(model.id);
+                });
+              }}
+              className="gap-4 group/item flex flex-row justify-between items-center"
+              data-active={model.id === optimisticModelId}
+            >
+              <div className="flex flex-col gap-1 items-start">
+                {model.name}
+                {model.description && (
+                  <div className="text-xs text-muted-foreground">
+                    {model.description}
+                  </div>
+                )}
+              </div>
+              <div className="text-foreground dark:text-foreground opacity-0 group-data-[active=true]/item:opacity-100">
+                <CheckCircleFillIcon />
+              </div>
+            </DropdownMenuItem>
+          ))
+        ) : (
+          <div className="p-4 text-center text-zinc-500">
+            No models available. Please contact admin.
+          </div>
+        )}
       </DropdownMenuContent>
     </DropdownMenu>
   );

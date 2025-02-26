@@ -53,7 +53,6 @@ export function Chat({
       mutate("/api/history");
     },
   });
-  console.log(messages,isLoading)
   const { data: votes } = useSWR<Array<Vote>>(
     `/api/vote?chatId=${id}`,
     fetcher
@@ -102,7 +101,7 @@ export function Chat({
         </form>
       </div>
 
-      <Block
+      {/* <Block
         chatId={id}
         input={input}
         setInput={setInput}
@@ -117,7 +116,7 @@ export function Chat({
         reload={reload}
         votes={votes}
         isReadonly={isReadonly}
-      />
+      /> */}
     </>
   );
 }

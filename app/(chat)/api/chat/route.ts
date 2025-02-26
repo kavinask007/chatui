@@ -103,22 +103,18 @@ export async function POST(request: Request) {
 
   // Get available tools and their configurations
   const availableTools = await getUserAvailableTools(session.user.id);
-  console.log(tools_selected)
+  console.log(tools_selected);
   const selectedToolConfigurations = availableTools
     .filter((tool) => tools_selected?.includes(tool.id))
     .reduce((acc, tool) => {
       acc[tool.name] = tool.configuration;
       return acc;
     }, {} as Record<string, any>);
-  // const toolConfigurations = availableTools.reduce((acc, tool) => {
-  //   acc[tool.name] = tool.configuration;
-  //   return acc;
-  // }, {} as Record<string, any>);
-console.log(selectedToolConfigurations)
+
   const toolSet = await createToolSet({
     mcpServers: selectedToolConfigurations,
   });
-
+  console.log(toolSet);
   return createDataStreamResponse({
     execute: (dataStream) => {
       dataStream.writeData({
@@ -132,7 +128,7 @@ console.log(selectedToolConfigurations)
         messages: coreMessages,
         maxSteps: 10,
         experimental_transform: smoothStream(),
-        tools: toolSet.tools,
+        tools: toolSet?.tools,
         onFinish: async ({ response }) => {
           if (session.user?.id) {
             try {

@@ -63,7 +63,7 @@ function PureSuggestedActions({
                   role: "user",
                   content: suggestedAction.action,
                 },
-                { data: { selected_tools: selectedTools} }
+                { data: { selected_tools: selectedTools } }
               );
             }}
             className="text-left border rounded-xl px-4 py-3.5 text-sm flex-1 gap-1 sm:flex-col w-full h-auto justify-start items-start"

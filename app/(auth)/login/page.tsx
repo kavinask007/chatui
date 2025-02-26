@@ -8,7 +8,7 @@ import { FcGoogle } from "react-icons/fc";
 import { AuthForm } from "@/components/auth-form";
 import { SubmitButton } from "@/components/submit-button";
 import Form from "next/form";
-import { login, ProviderLogin, type LoginActionState } from "../actions";
+import { login, ProviderLogin, Auth0Login, type LoginActionState } from "../actions";
 import { Button } from "@/components/ui/button";
 
 export default function Page() {
@@ -30,6 +30,12 @@ export default function Page() {
       status: "idle",
     }
   );
+  const [auth0state, auth0formAction] = useActionState<LoginActionState>(
+    Auth0Login,
+    {
+      status: "idle",
+    }
+  );
 
   useEffect(() => {
     if (state.status === "failed") {
@@ -41,9 +47,15 @@ export default function Page() {
       router.refresh();
     }
   }, [state.status, router]);
-  const handleSignIn = async () => {
+
+  const handleGoogleSignIn = async () => {
     await providerformAction();
   };
+
+  const handleAuth0SignIn = async () => {
+    await auth0formAction();
+  };
+
   const handleSubmit = (formData: FormData) => {
     setEmail(formData.get("email") as string);
     formAction(formData);
@@ -71,12 +83,20 @@ export default function Page() {
               </p>
             </div>
 
-            <Form action={handleSignIn} className="mt-8">
-              <SubmitButton isSuccessful={isSuccessful}>
-                <FcGoogle className="w-full h-5 mr-2" />
-                Sign in with Google
-              </SubmitButton>
-            </Form>
+            <div className="space-y-4">
+              <Form action={handleGoogleSignIn}>
+                <SubmitButton isSuccessful={isSuccessful}>
+                  <FcGoogle className="w-full h-5 mr-2" />
+                  Sign in with Google
+                </SubmitButton>
+              </Form>
+
+              <Form action={handleAuth0SignIn}>
+                <SubmitButton isSuccessful={isSuccessful}>
+                  Sign in with Auth0
+                </SubmitButton>
+              </Form>
+            </div>
           </div>
         </div>
       </div>

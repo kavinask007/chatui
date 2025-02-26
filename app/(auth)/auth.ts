@@ -2,6 +2,8 @@
 import NextAuth, { type User, type Session, NextAuthConfig } from "next-auth";
 // import Credentials from "next-auth/providers/credentials";
 // import { getUser } from "@/lib/db/queries";
+import Auth0Provider from "next-auth/providers/auth0"
+ 
 import { authConfig } from "./auth.config";
 import postgres from "postgres";
 import { drizzle } from "drizzle-orm/postgres-js";
@@ -64,6 +66,11 @@ export const authConfigFinal = {
         },
       },
     }),
+    Auth0Provider({
+      clientId: process.env.AUTH0_CLIENT_ID!,
+      clientSecret: process.env.AUTH0_CLIENT_SECRET!,
+      issuer: process.env.AUTH0_ISSUER!
+    })
     // Credentials({
     //   credentials: {},
     //   async authorize({ email, password }: any) {

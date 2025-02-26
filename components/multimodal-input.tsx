@@ -90,7 +90,6 @@ function PureMultimodalInput({
   const [isToolDialogOpen, setIsToolDialogOpen] = useState(false);
 
   useEffect(() => {
-    // Fetch available tools
     const fetchTools = async () => {
       setIsToolsLoading(true);
       try {
@@ -102,25 +101,15 @@ function PureMultimodalInput({
         const data = await response.json();
         setTools(data.tools);
         
-        // Update selected tools from localStorage to only include available tools
+        // Get available tool IDs from server response
         const availableToolIds = new Set(data.tools.map((t: Tool) => t.id));
-        const currentSelectedTools: string[] = [];
         
-        // If no tools were previously selected, select all by default
-        if (!selectedTools || selectedTools.length === 0) {
-          data.tools.forEach((tool: Tool) => {
-            currentSelectedTools.push(tool.id);
-          });
-        } else {
-          // Otherwise, only keep the selected tools that are still available
-          selectedTools.forEach((toolId) => {
-            if (availableToolIds.has(toolId)) {
-              currentSelectedTools.push(toolId);
-            }
-          });
-        }
-        
-        setSelectedTools(currentSelectedTools);
+        // Filter selected tools from localStorage to only keep valid ones
+        setSelectedTools(prev => {
+          const validSelectedTools = prev.filter(toolId => availableToolIds.has(toolId));
+          return validSelectedTools;
+        });
+
       } catch (error) {
         console.error("Failed to fetch tools:", error);
       } finally {
@@ -129,7 +118,7 @@ function PureMultimodalInput({
     };
     
     fetchTools();
-  }, [setSelectedTools]); // Removed selectedTools from dependency array to prevent infinite loop
+  }, []); // No dependencies needed since we only want this to run once on mount
 
   useEffect(() => {
     if (textareaRef.current) {
@@ -263,13 +252,11 @@ function PureMultimodalInput({
   );
 
   const handleToolToggle = (toolId: string) => {
-    setSelectedTools((prev) => {
-      const prevArray = Array.isArray(prev) ? prev : [];
-      if (prevArray.includes(toolId)) {
-        return prevArray.filter(id => id !== toolId);
-      } else {
-        return [...prevArray, toolId];
+    setSelectedTools(prev => {
+      if (prev.includes(toolId)) {
+        return prev.filter(id => id !== toolId);
       }
+      return [...prev, toolId];
     });
   };
 
@@ -358,13 +345,14 @@ function PureMultimodalInput({
             align="start"
             className="w-[280px] max-h-[300px] overflow-y-auto rounded-xl"
           >
+            <div className="p-2 font-medium text-center border-b text-secondary-foreground">Tools</div>
             {isToolsLoading ? (
               <div className="flex flex-col gap-2 p-4">
                 <Skeleton className="h-[60px] w-full rounded-xl" />
                 <Skeleton className="h-[60px] w-full rounded-xl" />
                 <Skeleton className="h-[60px] w-full rounded-xl" />
               </div>
-            ) : (
+            ) : tools.length > 0 ? (
               <div className="grid grid-cols-1 gap-2 p-2">
                 {tools?.map((tool, index) => (
                   <React.Fragment key={tool.id}>
@@ -372,8 +360,8 @@ function PureMultimodalInput({
                       className={cx(
                         "p-2 rounded-xl cursor-pointer transition-colors h-[60px] flex flex-col justify-center overflow-hidden",
                         Array.isArray(selectedTools) && selectedTools.includes(tool.id)
-                          ? "bg-green-500/20 hover:bg-green-500/30"
-                          : "hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                          ? "bg-primary hover:bg-primary/90 text-primary-foreground"
+                          : "hover:bg-zinc-100 dark:hover:bg-zinc-800 text-secondary-foreground"
                       )}
                       onClick={() => handleToolToggle(tool.id)}
                     >
@@ -389,6 +377,10 @@ function PureMultimodalInput({
                     )}
                   </React.Fragment>
                 ))}
+              </div>
+            ) : (
+              <div className="p-4 text-center text-zinc-500">
+                No tools available. Please contact admin.
               </div>
             )}
           </DropdownMenuContent>
