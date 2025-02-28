@@ -34,14 +34,23 @@ export const authConfigFinal = {
     },
     async signIn({ user, account, profile, email, credentials }) {
       let email_id = user.email || "";
+      console.log(email_id)
       let isAllowedToSignIn = await isVerfied(email_id);
       if (isAllowedToSignIn) {
         return true;
       } else {
-        // Return false to display a default error message
-        return false;
-        // Or you can return a URL to redirect to:
-        // return '/unauthorized'
+        // Clear the auth0 session cookie to allow signing in with different credentials
+        if (account?.provider === 'auth0') {
+          const auth0Domain = process.env.AUTH0_ISSUER;
+          const clientId = process.env.AUTH0_CLIENT_ID;
+          const returnTo = process.env.NEXT_AUTH_URL;
+          
+          // Return the Auth0 logout URL that will clear session and redirect back
+          return `/api/auth/signout?error=Not authorized. Please contact administrator.&callbackUrl=${encodeURIComponent(
+            `${auth0Domain}/v2/logout?client_id=${clientId}&returnTo=${returnTo}/login?error=Not authorized to signin. Please contact administrator`
+          )}`;
+        }
+        return '/login?error=Not authorized. Please contact administrator.';
       }
     },
   },
@@ -69,54 +78,14 @@ export const authConfigFinal = {
     Auth0Provider({
       clientId: process.env.AUTH0_CLIENT_ID!,
       clientSecret: process.env.AUTH0_CLIENT_SECRET!,
-      issuer: process.env.AUTH0_ISSUER!
+      issuer: process.env.AUTH0_ISSUER!,
+      authorization: {
+        params: {
+          prompt: "login" // Force re-authentication
+        }
+      }
     })
-    // Credentials({
-    //   credentials: {},
-    //   async authorize({ email, password }: any) {
-    //     const users = await getUser(email);
-    //     if (users.length === 0) return null;
-    //     // biome-ignore lint: Forbidden non-null assertion.
-    //     const passwordsMatch = await compare(password, users[0].password!);
-    //     if (!passwordsMatch) return null;
-    //     return users[0] as any;
-    //   },
-    // }),
   ],
-
-  // callbacks: {
-  // async session({session, user}) {
-  //   session.user.id = user.id
-  //   return session
-  // },
-  // async jwt({ token, account, profile, user }) {
-  //   console.log("JWT ENTERED BABYYYYYYY");
-  //   console.log(token, account, profile, user);
-  //   if (user) {
-  //     token.id = user.id;
-  //   }
-  //   if (account) {
-  //     token.accessToken = account.access_token;
-  //     token.id = profile?.id;
-  //   }
-  //   console.log("JWT DONEEEEEEEEEEEEEEEEEEEEEEEEEEE");
-  //   console.log(token);
-  //   return token;
-  // },
-  // async session({ session, token }) {
-  //   console.log("SEssssssssssssssssssssssssssionnnnnnnnnnnnnnnn entered");
-  //   console.log(session, token);
-  //   if (token.accessToken) {
-  //     session.sessionToken = token.accessToken as string;
-  //   }
-  //   if (session.user) {
-  //     session.user.id = token.id as string;
-  //   }
-  //   console.log("session exitttttttttttttttttttttting");
-  //   console.log(session);
-  //   return session;
-  // },
-  // },
 } satisfies NextAuthConfig;
 
 export const {

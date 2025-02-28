@@ -1,9 +1,35 @@
 import { experimental_wrapLanguageModel as wrapLanguageModel } from "ai";
-import { createAmazonBedrock } from "@ai-sdk/amazon-bedrock";
 import { customMiddleware } from "./custom-middleware";
-import { createGroq } from "@ai-sdk/groq";
-import { createOllama } from "ollama-ai-provider";
-import { createMistral } from '@ai-sdk/mistral';
+import {
+  createAmazonBedrock,
+  AmazonBedrockProviderSettings,
+} from "@ai-sdk/amazon-bedrock";
+import { createGroq, GroqProviderSettings } from "@ai-sdk/groq";
+import { createOllama, OllamaProviderSettings } from "ollama-ai-provider";
+import { createMistral, MistralProviderSettings } from "@ai-sdk/mistral";
+
+// Map of settings for each provider
+export const providerSettings = {
+  bedrock: {
+    region: true,
+    accessKeyId: true,
+    secretAccessKey: true,
+    sessionToken: true,
+    baseURL: true,
+  },
+  groq: {
+    baseURL: true,
+    apiKey: true,
+  },
+  mistral: {
+    baseURL: true,
+    apiKey: true,
+  },
+  ollama: {
+    baseURL: true,
+  },
+} as const;
+
 const createClient = (provider: any) => {
   // Get credentials if they exist
   const credentials = provider?.credentials;
@@ -22,11 +48,12 @@ const createClient = (provider: any) => {
     });
   }
   switch (provider?.provider?.name) {
-    case "Groq":
+    case "groq":
       return createGroq(config);
-    case "AWSBedrock":
+    case "bedrock":
       return createAmazonBedrock(config);
-    case "Ollama":
+    case "ollama":
+      config["simulateStreaming"] = true;
       return createOllama(config);
     case "mistral":
       return createMistral(config);

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useActionState, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { FcGoogle } from "react-icons/fc";
@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 
 export default function Page() {
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   const [email, setEmail] = useState("");
   const [isSuccessful, setIsSuccessful] = useState(false);
@@ -36,6 +37,13 @@ export default function Page() {
       status: "idle",
     }
   );
+
+  useEffect(() => {
+    const error = searchParams.get("error");
+    if (error) {
+      toast.error(error);
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     if (state.status === "failed") {

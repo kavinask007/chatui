@@ -100,23 +100,24 @@ function PureMultimodalInput({
         });
         const data = await response.json();
         setTools(data.tools);
-        
+
         // Get available tool IDs from server response
         const availableToolIds = new Set(data.tools.map((t: Tool) => t.id));
-        
+
         // Filter selected tools from localStorage to only keep valid ones
-        setSelectedTools(prev => {
-          const validSelectedTools = prev.filter(toolId => availableToolIds.has(toolId));
+        setSelectedTools((prev) => {
+          const validSelectedTools = prev.filter((toolId) =>
+            availableToolIds.has(toolId)
+          );
           return validSelectedTools;
         });
-
       } catch (error) {
         console.error("Failed to fetch tools:", error);
       } finally {
         setIsToolsLoading(false);
       }
     };
-    
+
     fetchTools();
   }, []); // No dependencies needed since we only want this to run once on mount
 
@@ -165,6 +166,9 @@ function PureMultimodalInput({
   const [uploadQueue, setUploadQueue] = useState<Array<string>>([]);
 
   const submitForm = useCallback(() => {
+    if (input == "") {
+      return;
+    }
     window.history.replaceState({}, "", `/chat/${chatId}`);
 
     append(
@@ -252,9 +256,9 @@ function PureMultimodalInput({
   );
 
   const handleToolToggle = (toolId: string) => {
-    setSelectedTools(prev => {
+    setSelectedTools((prev) => {
       if (prev.includes(toolId)) {
-        return prev.filter(id => id !== toolId);
+        return prev.filter((id) => id !== toolId);
       }
       return [...prev, toolId];
     });
@@ -345,7 +349,9 @@ function PureMultimodalInput({
             align="start"
             className="w-[280px] max-h-[300px] overflow-y-auto rounded-xl"
           >
-            <div className="p-2 font-medium text-center border-b text-secondary-foreground">Tools</div>
+            <div className="p-2 font-medium text-center border-b text-secondary-foreground">
+              Tools
+            </div>
             {isToolsLoading ? (
               <div className="flex flex-col gap-2 p-4">
                 <Skeleton className="h-[60px] w-full rounded-xl" />
@@ -359,7 +365,8 @@ function PureMultimodalInput({
                     <div
                       className={cx(
                         "p-2 rounded-xl cursor-pointer transition-colors h-[60px] flex flex-col justify-center overflow-hidden",
-                        Array.isArray(selectedTools) && selectedTools.includes(tool.id)
+                        Array.isArray(selectedTools) &&
+                          selectedTools.includes(tool.id)
                           ? "bg-primary hover:bg-primary/90 text-primary-foreground"
                           : "hover:bg-zinc-100 dark:hover:bg-zinc-800 text-secondary-foreground"
                       )}
@@ -372,9 +379,7 @@ function PureMultimodalInput({
                         </div>
                       )}
                     </div>
-                    {index < tools.length - 1 && (
-                      <Separator className="my-1" />
-                    )}
+                    {index < tools.length - 1 && <Separator className="my-1" />}
                   </React.Fragment>
                 ))}
               </div>

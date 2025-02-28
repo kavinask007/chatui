@@ -445,7 +445,7 @@ export async function getUserAvailableModelsWithConfig(userId: string) {
             baseUrl: modelProvider.baseUrl,
             configuration: modelProvider.configuration,
           },
-          credentials: modelConfigCredential,
+          credentials: modelProvider.configuration,
           settings: modelConfigSetting,
         })
         .from(modelConfig)
@@ -581,13 +581,11 @@ export async function createModel({
   providerId,
   modelId,
   description,
-  credentials,
 }: {
   name: string;
   providerId: string;
   modelId: string;
   description?: string;
-  credentials?: Array<{ key: ModelCredentialKey; value: string }>;
 }) {
   try {
     const [result] = await db
@@ -600,16 +598,6 @@ export async function createModel({
         createdAt: new Date(),
       })
       .returning({ id: modelConfig.id });
-
-    if (credentials && credentials.length > 0) {
-      await db.insert(modelConfigCredential).values(
-        credentials.map((cred) => ({
-          modelConfigId: result.id,
-          key: cred.key,
-          value: cred.value,
-        }))
-      );
-    }
 
     return result;
   } catch (error) {

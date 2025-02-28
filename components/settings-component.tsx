@@ -1,6 +1,5 @@
 "use client";
 
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -32,6 +31,7 @@ import {
 import { ModelEditor } from "@/components/settings-model-editor";
 import { ToolEditor } from "@/components/settings-tool";
 import { GroupsEditor } from "@/components/settings-group-editor";
+import { ProvidersEditor } from "@/components/settings-providers";
 import {
   Dialog,
   DialogContent,
@@ -206,9 +206,9 @@ export function SettingsComponent({ isAdmin }: { isAdmin: boolean }) {
                 onClick={() => router.push("/")}
               >
                 <ArrowLeft className="h-4 w-4" />
-             Back to Home  
+                Back to Home
               </Button>
-              
+
               <div className="space-y-1">
                 <Button
                   variant={activeSection === "users" ? "default" : "ghost"}
@@ -223,6 +223,13 @@ export function SettingsComponent({ isAdmin }: { isAdmin: boolean }) {
                   onClick={() => setActiveSection("groups")}
                 >
                   Groups
+                </Button>
+                <Button
+                  variant={activeSection === "providers" ? "default" : "ghost"}
+                  className="w-full justify-start"
+                  onClick={() => setActiveSection("providers")}
+                >
+                  Providers
                 </Button>
                 <Button
                   variant={activeSection === "models" ? "default" : "ghost"}
@@ -328,7 +335,7 @@ export function SettingsComponent({ isAdmin }: { isAdmin: boolean }) {
             )}
 
             {activeSection === "groups" && <GroupsEditor />}
-
+            {activeSection === "providers" && <ProvidersEditor />}
             {activeSection === "models" && <ModelEditor />}
 
             {activeSection === "tools" && <ToolEditor />}
@@ -392,7 +399,9 @@ export function SettingsComponent({ isAdmin }: { isAdmin: boolean }) {
                           <TableRow key={user.email}>
                             <TableCell>{user.email}</TableCell>
                             <TableCell>
-                              {users.some(u => u.email === user.email) ? "Joined" : "Pending"}
+                              {users.some((u) => u.email === user.email)
+                                ? "Joined"
+                                : "Pending"}
                             </TableCell>
                           </TableRow>
                         ))}

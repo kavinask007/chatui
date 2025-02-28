@@ -63,11 +63,6 @@ interface Group {
   createdAt: Date;
 }
 
-interface Credential {
-  key: string;
-  value: string;
-}
-
 export function ModelEditor() {
   const [providers, setProviders] = useState<Provider[]>([]);
   const [models, setModels] = useState<Model[]>([]);
@@ -82,28 +77,12 @@ export function ModelEditor() {
   const [providerId, setProviderId] = useState("");
   const [modelId, setModelId] = useState("");
   const [description, setDescription] = useState("");
-  const [credentials, setCredentials] = useState<Credential[]>([]);
 
   useEffect(() => {
     Promise.all([fetchProviders(), fetchModels(), fetchGroups()]).finally(() =>
       setLoading(false)
     );
   }, []);
-
-  // Update credentials when provider changes
-  useEffect(() => {
-    if (providerId) {
-      const provider = providers.find((p) => p.id === providerId);
-      if (provider?.configuration) {
-        setCredentials(
-          Object.keys(provider.configuration).map((key) => ({
-            key,
-            value: "",
-          }))
-        );
-      }
-    }
-  }, [providerId, providers]);
 
   const fetchProviders = async () => {
     try {
@@ -147,28 +126,16 @@ export function ModelEditor() {
     }
   };
 
-  const handleCredentialChange = (index: number, value: string) => {
-    const newCredentials = [...credentials];
-    newCredentials[index].value = value;
-    setCredentials(newCredentials);
-  };
-
   const resetForm = () => {
     setName("");
     setProviderId("");
     setModelId("");
     setDescription("");
-    setCredentials([]);
   };
 
   const handleCreateModel = async () => {
     try {
       setIsCreating(true);
-
-      // Filter out empty credentials
-      const filteredCredentials = credentials.filter(
-        (cred) => cred.value.trim() !== ""
-      );
 
       const response = await fetch("/api/settings/model", {
         method: "POST",
@@ -179,7 +146,6 @@ export function ModelEditor() {
           providerId,
           modelId,
           description,
-          credentials: filteredCredentials,
         }),
       });
 
@@ -342,26 +308,6 @@ export function ModelEditor() {
                   placeholder="Model description"
                 />
               </div>
-
-              {providerId && credentials.length > 0 && (
-                <div className="space-y-4">
-                  <Label>Credentials</Label>
-                  {credentials.map((cred, index) => (
-                    <div key={cred.key} className="space-y-2">
-                      <Label htmlFor={cred.key}>{cred.key}</Label>
-                      <Input
-                        id={cred.key}
-                        type="password"
-                        value={cred.value}
-                        onChange={(e) =>
-                          handleCredentialChange(index, e.target.value)
-                        }
-                        placeholder={`Enter ${cred.key}`}
-                      />
-                    </div>
-                  ))}
-                </div>
-              )}
 
               <Button
                 className="w-full"

@@ -81,7 +81,7 @@ export async function POST(request: Request) {
       }
 
       case "createModel": {
-        const { name, providerId, modelId, description, credentials } = body;
+        const { name, providerId, modelId, description } = body;
         if (!name || !providerId || !modelId) {
           return Response.json(
             { error: "Name, provider ID and model ID are required" },
@@ -94,7 +94,6 @@ export async function POST(request: Request) {
           providerId,
           modelId,
           description,
-          credentials,
         });
         return Response.json({ message: "Model created successfully" });
       }
