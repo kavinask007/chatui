@@ -16,7 +16,9 @@
     "db:push": "drizzle-kit push",
     "db:pull": "drizzle-kit pull",
     "db:check": "drizzle-kit check",
-    "db:up": "drizzle-kit up"
+    "db:up": "drizzle-kit up",
+    "users:add": "tsx scripts/setup-users.ts",
+    "users:add-admin": "tsx scripts/setup-users.ts --admin"
   },
   "dependencies": {
     "@ai-sdk/amazon-bedrock": "^2.0.2",

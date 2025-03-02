@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useActionState, useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -11,7 +11,7 @@ import Form from "next/form";
 import { login, ProviderLogin, Auth0Login, type LoginActionState } from "../actions";
 import { Button } from "@/components/ui/button";
 
-export default function Page() {
+function LoginContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -109,5 +109,13 @@ export default function Page() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function Page() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <LoginContent />
+    </Suspense>
   );
 }
