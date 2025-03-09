@@ -1,4 +1,4 @@
-import { experimental_wrapLanguageModel as wrapLanguageModel } from "ai";
+import { experimental_wrapLanguageModel as wrapLanguageModel ,extractReasoningMiddleware} from "ai";
 import { customMiddleware } from "./custom-middleware";
 import {
   createAmazonBedrock,
@@ -69,12 +69,12 @@ export const customModel = (provider: any) => {
     // Fallback to groq if provider not supported
     return wrapLanguageModel({
       model: createGroq({ apiKey: process.env.GROQ_API_KEY })("gemma2-9b-it"),
-      middleware: customMiddleware,
+      middleware: extractReasoningMiddleware({ tagName: 'think' }),
     });
   }
 
   return wrapLanguageModel({
     model: client(provider.modelId),
-    middleware: customMiddleware,
+    middleware: extractReasoningMiddleware({ tagName: 'think' }),
   });
 };

@@ -4,7 +4,7 @@ import type { Attachment, Message } from "ai";
 import { useChat } from "ai/react";
 import { useState } from "react";
 import useSWR, { useSWRConfig } from "swr";
-
+import { toast } from "sonner";
 import { ChatHeader } from "@/components/chat-header";
 import type { Vote } from "@/lib/db/schema";
 import { fetcher, generateUUID } from "@/lib/utils";
@@ -32,6 +32,7 @@ export function Chat({
 }) {
   const { mutate } = useSWRConfig();
 
+
   const {
     messages,
     setMessages,
@@ -42,6 +43,7 @@ export function Chat({
     isLoading,
     stop,
     reload,
+    error,
   } = useChat({
     id,
     body: { id, modelId: selectedModelId },
@@ -59,7 +61,7 @@ export function Chat({
   );
   const [attachments, setAttachments] = useState<Array<Attachment>>([]);
   const isBlockVisible = useBlockSelector((state) => state.isVisible);
-
+  console.log(messages);
   return (
     <>
       <div className="flex flex-col min-w-0 h-dvh bg-background">
@@ -100,7 +102,8 @@ export function Chat({
           )}
         </form>
       </div>
-
+      {error &&
+        toast.success(error.message || "An error occurred during the chat")}
       {/* <Block
         chatId={id}
         input={input}

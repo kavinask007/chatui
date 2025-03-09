@@ -167,7 +167,7 @@ export async function POST(request: Request) {
         },
       });
 
-      result.mergeIntoDataStream(dataStream);
+      result.mergeIntoDataStream(dataStream,{sendReasoning:true});
     },
   });
 }
