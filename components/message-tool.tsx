@@ -23,7 +23,8 @@ interface ToolStep {
 interface ToolResult {
   content: Array<{
     type: string;
-    text: string;
+    text?: string;
+    data?: string;
   }>;
   isError: boolean;
 }
@@ -65,15 +66,15 @@ export const ToolDisplay = ({
   );
 
   return (
-    <Accordion type="single" collapsible className="w-full">
+    <Accordion type="single" collapsible defaultValue="steps" className="w-full">
       <AccordionItem value="steps">
-        <AccordionTrigger>
+        <AccordionTrigger className="bg-muted/20 p-2 rounded-md">
           <div className="flex items-center gap-2">
             <WrenchIcon size={14} className="text-muted-foreground" />
-            <span>Tools Invoked ({sortedToolGroups.length})</span>
+            <span>Tools</span>
           </div>
         </AccordionTrigger>
-        <AccordionContent>
+        <AccordionContent className="bg-muted/20 p-4">
           <div className="flex flex-col gap-4">
             {sortedToolGroups.map(([toolCallId, steps]: [string, any], index) => (
               <div key={toolCallId} className="pl-4 border-l-2 border-muted">
@@ -83,7 +84,7 @@ export const ToolDisplay = ({
                     Step {index + 1}: {steps.call?.toolName || steps.result?.toolName}
                   </span>
                   {steps.result?.args ?(
-                        <div className="ounded-md">
+                        <div className="rounded-md">
                           <Markdown>
                             {JSON.stringify(steps.result.args, null, 2)}
                           </Markdown>
@@ -137,15 +138,29 @@ export const ToolDisplay = ({
                               const result = JSON.parse(
                                 steps.result.result
                               ) as ToolResult;
-                              if (result.content?.[0]?.type === "text") {
-                                const parsed = JSON.parse(result.content[0].text);
-                                return (
-                                  <Markdown>
-                                    {JSON.stringify(parsed, null, 2)}
-                                  </Markdown>
-                                );
-                              }
-                              return <Markdown>{steps.result.result}</Markdown>;
+                              return (
+                                <div className="flex flex-col gap-2">
+                                  {result.content.map((item, i) => {
+                                    if (item.type === "text") {
+                                      return (
+                                        <Markdown key={i}>
+                                          {`${item.text}`}
+                                        </Markdown>
+                                      );
+                                    } else if (item.type === "image" && item.data) {
+                                      return (
+                                        <img 
+                                          key={i}
+                                          src={`data:image/png;base64,${item.data}`}
+                                          alt="Tool result image"
+                                          className="max-w-full h-auto"
+                                        />
+                                      );
+                                    }
+                                    return null;
+                                  })}
+                                </div>
+                              );
                             } catch (e) {
                               console.error("Failed to parse tool result:", e);
                               return <span>{steps.result.result}</span>;

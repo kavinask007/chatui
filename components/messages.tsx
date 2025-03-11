@@ -2,7 +2,7 @@ import { ChatRequestOptions, Message } from "ai";
 import { PreviewMessage, ThinkingMessage } from "./message";
 import { useScrollToBottom } from "./use-scroll-to-bottom";
 import { Overview } from "./overview";
-import { memo, useRef } from "react";
+import { memo, useRef, useEffect, useState } from "react";
 import { Vote } from "@/lib/db/schema";
 import equal from "fast-deep-equal";
 import { Console } from "./console";
@@ -33,7 +33,68 @@ function PureMessages({
   reload,
   isReadonly,
 }: MessagesProps) {
-  const [containerRef, endRef] = useScrollToBottom<HTMLDivElement>();
+  const containerRef = useRef<HTMLDivElement>(null);
+  const endRef = useRef<HTMLDivElement>(null);
+  const [autoScroll, setAutoScroll] = useState(true);
+
+  useEffect(() => {
+    const container = containerRef.current;
+    const end = endRef.current;
+
+    if (!isLoading) {
+      setAutoScroll(true);
+    }
+
+    if (container && end && isLoading && autoScroll) {
+      const observer = new MutationObserver(() => {
+        end.scrollIntoView({ behavior: "smooth", block: "end" });
+      });
+
+      observer.observe(container, {
+        childList: true,
+        subtree: true,
+        attributes: false,
+        characterData: false,
+      });
+      return () => observer.disconnect();
+    }
+  }, [isLoading, autoScroll]);
+
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const handleWheel = (e: WheelEvent) => {
+      if (e.deltaY < 0) { // Scrolling up
+        setAutoScroll(false);
+      }
+    };
+
+    const handleTouchStart = (e: TouchEvent) => {
+      const touch = e.touches[0];
+      const startY = touch.pageY;
+
+      const handleTouchMove = (e: TouchEvent) => {
+        const touch = e.touches[0];
+        if (touch.pageY > startY) { // Swiping up
+          setAutoScroll(false);
+        }
+      };
+
+      container.addEventListener('touchmove', handleTouchMove);
+      container.addEventListener('touchend', () => {
+        container.removeEventListener('touchmove', handleTouchMove);
+      }, { once: true });
+    };
+
+    container.addEventListener('wheel', handleWheel);
+    container.addEventListener('touchstart', handleTouchStart);
+
+    return () => {
+      container.removeEventListener('wheel', handleWheel);
+      container.removeEventListener('touchstart', handleTouchStart);
+    };
+  }, []);
 
   return (
     <div

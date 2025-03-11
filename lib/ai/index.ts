@@ -54,6 +54,7 @@ const createClient = (provider: any) => {
       return createAmazonBedrock(config);
     case "ollama":
       config["simulateStreaming"] = true;
+      console.log(config)
       return createOllama(config);
     case "mistral":
       return createMistral(config);

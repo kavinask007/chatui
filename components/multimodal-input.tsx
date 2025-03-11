@@ -354,9 +354,9 @@ function PureMultimodalInput({
             </div>
             {isToolsLoading ? (
               <div className="flex flex-col gap-2 p-4">
-                <Skeleton className="h-[60px] w-full rounded-xl" />
-                <Skeleton className="h-[60px] w-full rounded-xl" />
-                <Skeleton className="h-[60px] w-full rounded-xl" />
+                <Skeleton className="h-[20px] w-full rounded-xl" />
+                <Skeleton className="h-[20px] w-full rounded-xl" />
+                <Skeleton className="h-[20px] w-full rounded-xl" />
               </div>
             ) : tools.length > 0 ? (
               <div className="grid grid-cols-1 gap-2 p-2">
@@ -364,20 +364,15 @@ function PureMultimodalInput({
                   <React.Fragment key={tool.id}>
                     <div
                       className={cx(
-                        "p-2 rounded-xl cursor-pointer transition-colors h-[60px] flex flex-col justify-center overflow-hidden",
+                        "px-2 py-1 rounded-xl cursor-pointer transition-colors flex flex-col justify-center overflow-hidden",
                         Array.isArray(selectedTools) &&
                           selectedTools.includes(tool.id)
-                          ? "bg-primary hover:bg-primary/90 text-primary-foreground"
-                          : "hover:bg-zinc-100 dark:hover:bg-zinc-800 text-secondary-foreground"
+                          ? "bg-primary hover:bg-muted/20 text-primary-foreground"
+                          : "hover:bg-muted/20 dark:hover:bg-zinc-800 text-secondary-foreground"
                       )}
                       onClick={() => handleToolToggle(tool.id)}
                     >
                       <div className="font-medium truncate">{tool.name}</div>
-                      {tool.description && (
-                        <div className="text-sm text-zinc-500 truncate">
-                          {tool.description}
-                        </div>
-                      )}
                     </div>
                     {index < tools.length - 1 && <Separator className="my-1" />}
                   </React.Fragment>

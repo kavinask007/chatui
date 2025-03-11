@@ -55,7 +55,6 @@ const allTools: AllowedTools[] = [...blocksTools, ...weatherTools];
 
 export async function POST(request: Request) {
   const requestData = await request.json();
-  console.log(requestData);
   const {
     id,
     messages,
@@ -103,7 +102,6 @@ export async function POST(request: Request) {
 
   // Get available tools and their configurations
   const availableTools = await getUserAvailableTools(session.user.id);
-  console.log(tools_selected);
   const selectedToolConfigurations = availableTools
     .filter((tool) => tools_selected?.includes(tool.id))
     .reduce((acc, tool) => {
@@ -114,7 +112,7 @@ export async function POST(request: Request) {
   const toolSet = await createToolSet({
     mcpServers: selectedToolConfigurations,
   });
-  console.log(toolSet);
+  // console.log(toolSet)
   return createDataStreamResponse({
     execute: (dataStream) => {
       dataStream.writeData({
@@ -127,6 +125,18 @@ export async function POST(request: Request) {
         system: systemPrompt,
         messages: coreMessages,
         maxSteps: 10,
+        toolCallStreaming: true,
+        onError: (e) => {
+          dataStream.writeData({
+            type: "error",
+            content: {
+              error: e instanceof Error ? e.message : String(e),
+            },
+          });
+        },
+        onChunk: (e) => {
+          // console.log(e);
+        },
         experimental_transform: smoothStream(),
         tools: toolSet?.tools,
         onFinish: async ({ response }) => {
@@ -145,7 +155,6 @@ export async function POST(request: Request) {
                         messageIdFromServer: messageId,
                       });
                     }
-
                     return {
                       id: messageId,
                       chatId: id,
@@ -158,16 +167,20 @@ export async function POST(request: Request) {
               });
             } catch (error) {
               console.error("Failed to save chat");
+              dataStream.writeData({
+                type: "error",
+                content: "invalid output from LLM",
+              });
             }
           }
         },
         experimental_telemetry: {
           isEnabled: true,
-          functionId: "stream-text",
+          metadata: { userId: session.user.id },
         },
       });
 
-      result.mergeIntoDataStream(dataStream,{sendReasoning:true});
+      result.mergeIntoDataStream(dataStream, { sendReasoning: true });
     },
   });
 }

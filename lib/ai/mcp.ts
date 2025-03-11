@@ -65,6 +65,7 @@ export async function createToolSet(config: ToolSetConfig): Promise<ToolSet> {
         parameters: jsonSchema(tool.inputSchema),
         execute: async (args) => {
           const resultPromise = (async () => {
+            console.log(tool,args)
             const result = await client.callTool({
               name: tool.name,
               arguments: args,

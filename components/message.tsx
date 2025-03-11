@@ -23,6 +23,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "./ui/accordion";
+import { Loader2Icon } from "lucide-react";
 
 const PurePreviewMessage = ({
   chatId,
@@ -51,18 +52,19 @@ const PurePreviewMessage = ({
   );
 
   // Group sequential tool invocations
-  const groupedParts = message.parts?.reduce((acc: any[], part, index) => {
-    if (part.type === "tool-invocation") {
-      if (acc.length && Array.isArray(acc[acc.length - 1])) {
-        acc[acc.length - 1].push(part);
+  const groupedParts =
+    message.parts?.reduce((acc: any[], part, index) => {
+      if (part.type === "tool-invocation") {
+        if (acc.length && Array.isArray(acc[acc.length - 1])) {
+          acc[acc.length - 1].push(part);
+        } else {
+          acc.push([part]);
+        }
       } else {
-        acc.push([part]);
+        acc.push(part);
       }
-    } else {
-      acc.push(part);
-    }
-    return acc;
-  }, []) || [];
+      return acc;
+    }, []) || [];
 
   return (
     <AnimatePresence>
@@ -84,7 +86,22 @@ const PurePreviewMessage = ({
           {message.role === "assistant" && (
             <div className="size-8 flex items-center rounded-full justify-center ring-1 shrink-0 ring-border bg-background">
               <div className="translate-y-px">
-                <SparklesIcon size={14} />
+                <motion.div
+                  animate={
+                    isLoading
+                      ? {
+                          opacity: [1, 0.4, 1],
+                        }
+                      : {}
+                  }
+                  transition={{
+                    duration: 1.5,
+                    repeat: Infinity,
+                    ease: "easeInOut",
+                  }}
+                >
+                  <SparklesIcon size={14} />
+                </motion.div>
               </div>
             </div>
           )}
@@ -102,21 +119,37 @@ const PurePreviewMessage = ({
             {message.role === "assistant" && message.reasoning && (
               <Accordion
                 type="single"
-                data-state="open"
+                defaultValue="reasoning"
                 collapsible
-                className="opacity-80 "
+                className="opacity-80 p-2"
               >
-                <AccordionItem value="reasoning">
-                  <AccordionTrigger
-                    data-state="open"
-                    className={cn("transition-opacity", {
-                      "animate-pulse": isLoading && message.reasoning,
-                    })}
-                  >
-                    View Reasoning
+                <AccordionItem
+                  value="reasoning"
+                  className="bg-muted/20 p-2 rounded-md"
+                >
+                  <AccordionTrigger className="flex items-center gap-2 p-2">
+                    {isLoading && !message.content ? (
+                      <div className="animate-pulse flex items-center gap-2">
+                        Reasoning{" "}
+                        <Loader2Icon className="animate-spin" size={14} />
+                      </div>
+                    ) : (
+                      "Reasoning"
+                    )}
                   </AccordionTrigger>
-                  <AccordionContent className="bg-secondary rounded-lg border p-4">
-                    <Markdown>{message.reasoning}</Markdown>
+                  <AccordionContent className="bg-muted/20 rounded-lg border p-4">
+                    <motion.div
+                      animate={{
+                        opacity: [1, 0.7, 1],
+                      }}
+                      transition={{
+                        duration: 2,
+                        repeat: Infinity,
+                        ease: "easeInOut",
+                      }}
+                    >
+                      <Markdown>{message.reasoning}</Markdown>
+                    </motion.div>
                   </AccordionContent>
                 </AccordionItem>
               </Accordion>
@@ -135,10 +168,13 @@ const PurePreviewMessage = ({
                       />
                     );
                   }
-                  
+
                   if (part.type === "text") {
                     return (
-                      <div key={`text-${index}`} className="flex flex-row gap-2 items-start">
+                      <div
+                        key={`text-${index}`}
+                        className="flex flex-row gap-2 items-start"
+                      >
                         {message.role === "user" && !isReadonly && (
                           <Tooltip>
                             <TooltipTrigger asChild>
@@ -238,7 +274,7 @@ export const ThinkingMessage = () => {
 
         <div className="flex flex-col gap-2 w-full">
           <div className="flex flex-col gap-4 text-muted-foreground">
-            Thinking... (Not really)
+            Thinking...
           </div>
         </div>
       </div>
