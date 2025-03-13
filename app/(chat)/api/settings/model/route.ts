@@ -8,7 +8,8 @@ import {
 } from "@/lib/db/queries";
 import { modelConfig, groupModelAccess, modelProvider } from "@/lib/db/schema";
 import { drizzle } from "drizzle-orm/postgres-js";
-import postgres from "postgres";  
+import postgres from "postgres";
+import { eq } from "drizzle-orm";
 
 // biome-ignore lint: Forbidden non-null assertion.
 const client = postgres(process.env.POSTGRES_URL!);
@@ -96,6 +97,27 @@ export async function POST(request: Request) {
           description,
         });
         return Response.json({ message: "Model created successfully" });
+      }
+
+      case "updateModel": {
+        const { id, name, description, modelId } = body;
+        if (!id) {
+          return Response.json(
+            { error: "Model ID is required" },
+            { status: 400 }
+          );
+        }
+
+        await db
+          .update(modelConfig)
+          .set({
+            name: name,
+            description: description,
+            modelId: modelId,
+          })
+          .where(eq(modelConfig.id, id));
+
+        return Response.json({ message: "Model updated successfully" });
       }
 
       case "assignModelToGroup": {

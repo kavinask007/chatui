@@ -19,7 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Loader2, MoreVertical, Plus, Trash } from "lucide-react";
+import { Loader2, MoreVertical, Plus, Trash, Edit } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -68,7 +68,9 @@ export function ToolEditor() {
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isUpdateDialogOpen, setIsUpdateDialogOpen] = useState(false);
   const [toolToDelete, setToolToDelete] = useState<string | null>(null);
+  const [toolToUpdate, setToolToUpdate] = useState<Tool | null>(null);
 
   // Form state
   const [name, setName] = useState("");
@@ -77,9 +79,7 @@ export function ToolEditor() {
   const [configText, setConfigText] = useState("{}"); // New state for configuration text
 
   useEffect(() => {
-    Promise.all([fetchTools(), fetchGroups()]).finally(() =>
-      setLoading(false)
-    );
+    Promise.all([fetchTools(), fetchGroups()]).finally(() => setLoading(false));
   }, []);
 
   const fetchTools = async () => {
@@ -147,7 +147,49 @@ export function ToolEditor() {
     }
   };
 
-  const handleUpdateToolConfig = async (toolId: string, configuration: Record<string, any>) => {
+  const handleUpdateTool = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!toolToUpdate) return;
+
+    try {
+      let parsedConfig = {};
+      try {
+        parsedConfig = JSON.parse(configText);
+      } catch (error) {
+        toast.error("Invalid JSON configuration");
+        return;
+      }
+
+      const response = await fetch("/api/settings/tools", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "updateToolConfig",
+          toolId: toolToUpdate.id,
+          name,
+          description,
+          configuration: parsedConfig,
+        }),
+      });
+
+      if (!response.ok) throw new Error("Failed to update tool");
+
+      toast.success("Tool updated successfully");
+      setIsUpdateDialogOpen(false);
+      setToolToUpdate(null);
+      setName("");
+      setDescription("");
+      setConfigText("{}");
+      await fetchTools();
+    } catch (error) {
+      toast.error("Failed to update tool");
+    }
+  };
+
+  const handleUpdateToolConfig = async (
+    toolId: string,
+    configuration: Record<string, any>
+  ) => {
     try {
       const response = await fetch("/api/settings/tools", {
         method: "POST",
@@ -212,7 +254,7 @@ export function ToolEditor() {
 
   const handleDeleteTool = async () => {
     if (!toolToDelete) return;
-    
+
     try {
       const response = await fetch("/api/settings/tools", {
         method: "POST",
@@ -232,6 +274,14 @@ export function ToolEditor() {
     } catch (error) {
       toast.error("Failed to delete tool");
     }
+  };
+
+  const openUpdateDialog = (tool: Tool) => {
+    setToolToUpdate(tool);
+    setName(tool.name);
+    setDescription(tool.description || "");
+    setConfigText(JSON.stringify(tool.configuration, null, 2));
+    setIsUpdateDialogOpen(true);
   };
 
   if (loading) {
@@ -294,17 +344,71 @@ export function ToolEditor() {
         </Dialog>
       </div>
 
-      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+      <Dialog open={isUpdateDialogOpen} onOpenChange={setIsUpdateDialogOpen}>
+        <DialogContent>
+          <form onSubmit={handleUpdateTool}>
+            <DialogHeader>
+              <DialogTitle>Update Tool</DialogTitle>
+              <DialogDescription>
+                Update tool details and configuration
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="grid gap-2">
+                <Label htmlFor="update-name">Name</Label>
+                <Input
+                  id="update-name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Enter tool name"
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="update-description">Description</Label>
+                <Textarea
+                  id="update-description"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  placeholder="Enter tool description"
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="update-configuration">
+                  Configuration (JSON)
+                </Label>
+                <Textarea
+                  id="update-configuration"
+                  value={configText}
+                  onChange={(e) => setConfigText(e.target.value)}
+                  placeholder="Enter JSON configuration"
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button type="submit">Update Tool</Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog
+        open={isDeleteDialogOpen}
+        onOpenChange={setIsDeleteDialogOpen}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the tool and remove it from all groups.
+              This action cannot be undone. This will permanently delete the
+              tool and remove it from all groups.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDeleteTool} className="bg-destructive text-destructive-foreground">
+            <AlertDialogAction
+              onClick={handleDeleteTool}
+              className="bg-destructive text-destructive-foreground"
+            >
               Delete
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -327,7 +431,15 @@ export function ToolEditor() {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <Select onValueChange={(groupId) => handleAddToolToGroup(tool.id, groupId)}>
+                  <DropdownMenuItem onClick={() => openUpdateDialog(tool)}>
+                    <Edit className="h-4 w-4 mr-2" />
+                    Edit Tool
+                  </DropdownMenuItem>
+                  <Select
+                    onValueChange={(groupId) =>
+                      handleAddToolToGroup(tool.id, groupId)
+                    }
+                  >
                     <SelectTrigger>
                       <SelectValue placeholder="Add to group" />
                     </SelectTrigger>
@@ -339,7 +451,7 @@ export function ToolEditor() {
                       ))}
                     </SelectContent>
                   </Select>
-                  <DropdownMenuItem 
+                  <DropdownMenuItem
                     className="text-destructive focus:text-destructive"
                     onClick={() => {
                       setToolToDelete(tool.id);
@@ -360,7 +472,7 @@ export function ToolEditor() {
                   {tool.groups.length > 0 ? (
                     <div className="flex flex-wrap gap-2 mt-1">
                       {tool.groups.map((groupId) => {
-                        const group = groups.find(g => g.id === groupId);
+                        const group = groups.find((g) => g.id === groupId);
                         return (
                           <span
                             key={groupId}
@@ -371,7 +483,9 @@ export function ToolEditor() {
                               variant="ghost"
                               size="sm"
                               className="h-4 w-4 p-0"
-                              onClick={() => handleRemoveToolFromGroup(tool.id, groupId)}
+                              onClick={() =>
+                                handleRemoveToolFromGroup(tool.id, groupId)
+                              }
                             >
                               ×
                             </Button>

@@ -24,7 +24,8 @@ import { useLocalStorage, useWindowSize } from "usehooks-ts";
 import { sanitizeUIMessages } from "@/lib/utils";
 
 import { ArrowUpIcon, PaperclipIcon, StopIcon } from "./icons";
-import { CubeIcon } from "@radix-ui/react-icons";
+import { CheckIcon, CrossCircledIcon } from "@radix-ui/react-icons";
+import { WrenchIcon } from "lucide-react";
 import { PreviewAttachment } from "./preview-attachment";
 import { Button } from "./ui/button";
 import { Textarea } from "./ui/textarea";
@@ -37,6 +38,11 @@ import {
 } from "./ui/dropdown-menu";
 import { Separator } from "./ui/separator";
 import { Skeleton } from "./ui/skeleton";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "./ui/tooltip";
 
 interface Tool {
   id: string;
@@ -264,6 +270,14 @@ function PureMultimodalInput({
     });
   };
 
+  const handleSelectAllTools = () => {
+    setSelectedTools(tools.map(tool => tool.id));
+  };
+
+  const handleDeselectAllTools = () => {
+    setSelectedTools([]);
+  };
+
   return (
     <div className="relative w-full flex flex-col gap-4">
       {messages.length === 0 &&
@@ -338,19 +352,50 @@ function PureMultimodalInput({
         >
           <DropdownMenuTrigger asChild>
             <Button
-              className="rounded-full p-[7px] h-fit dark:border-zinc-700 hover:dark:bg-zinc-900 hover:bg-zinc-200"
+              className={cx(
+                "rounded-full p-[7px] h-fit dark:border-zinc-700 hover:dark:bg-zinc-900 hover:bg-zinc-200",
+                selectedTools.length > 0 && "bg-primary text-primary-foreground hover:bg-primary/90"
+              )}
               variant="ghost"
               disabled={isLoading}
             >
-              <CubeIcon />
+              <WrenchIcon className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent
             align="start"
             className="w-[280px] max-h-[300px] overflow-y-auto rounded-xl"
           >
-            <div className="p-2 font-medium text-center border-b text-secondary-foreground">
-              Tools
+            <div className="p-2 font-medium text-center border-b text-secondary-foreground flex justify-between items-center">
+              <span>Tools</span>
+              <div className="flex gap-2">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={handleSelectAllTools}
+                      className="h-6 w-6"
+                    >
+                      <CheckIcon className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Select all tools</TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={handleDeselectAllTools}
+                      className="h-6 w-6"
+                    >
+                      <CrossCircledIcon className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Deselect all tools</TooltipContent>
+                </Tooltip>
+              </div>
             </div>
             {isToolsLoading ? (
               <div className="flex flex-col gap-2 p-4">
@@ -364,11 +409,11 @@ function PureMultimodalInput({
                   <React.Fragment key={tool.id}>
                     <div
                       className={cx(
-                        "px-2 py-1 rounded-xl cursor-pointer transition-colors flex flex-col justify-center overflow-hidden",
+                        "px-2 py-1 rounded-md cursor-pointer transition-colors flex flex-col justify-center overflow-hidden",
                         Array.isArray(selectedTools) &&
                           selectedTools.includes(tool.id)
-                          ? "bg-primary hover:bg-muted/20 text-primary-foreground"
-                          : "hover:bg-muted/20 dark:hover:bg-zinc-800 text-secondary-foreground"
+                          ? "bg-primary hover:bg-primary/70 text-primary-foreground"
+                          : "hover:bg-primary/20 dark:hover:bg-zinc-800 text-secondary-foreground"
                       )}
                       onClick={() => handleToolToggle(tool.id)}
                     >

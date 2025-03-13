@@ -65,8 +65,11 @@ export function ProvidersEditor() {
   const [loading, setLoading] = useState(true);
   const [isCreating, setIsCreating] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isUpdateDialogOpen, setIsUpdateDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [providerToDelete, setProviderToDelete] = useState<string | null>(null);
+  const [providerToUpdate, setProviderToUpdate] = useState<Provider | null>(null);
+  const [isUpdating, setIsUpdating] = useState(false);
 
   // Form state
   const [name, setName] = useState("");
@@ -164,26 +167,40 @@ export function ProvidersEditor() {
     }
   };
 
-  const handleUpdateProvider = async (provider: Provider) => {
+  const handleUpdateProvider = async () => {
+    if (!providerToUpdate) return;
+
     try {
+      setIsUpdating(true);
       const response = await fetch("/api/settings/providers", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           action: "updateProvider",
-          id: provider.id,
-          description: provider.description,
-          configuration: provider.configuration,
+          id: providerToUpdate.id,
+          description,
+          configuration,
         }),
       });
 
       if (!response.ok) throw new Error("Failed to update provider");
 
       toast.success("Provider updated successfully");
+      setIsUpdateDialogOpen(false);
+      setProviderToUpdate(null);
       await fetchProviders();
     } catch (error) {
       toast.error("Failed to update provider");
+    } finally {
+      setIsUpdating(false);
     }
+  };
+
+  const openUpdateDialog = (provider: Provider) => {
+    setProviderToUpdate(provider);
+    setDescription(provider.description || "");
+    setConfiguration(provider.configuration);
+    setIsUpdateDialogOpen(true);
   };
 
   const handleProviderTypeChange = (selectedType: string) => {
@@ -329,7 +346,7 @@ export function ProvidersEditor() {
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
                     <DropdownMenuItem
-                      onClick={() => handleUpdateProvider(provider)}
+                      onClick={() => openUpdateDialog(provider)}
                     >
                       Edit configuration
                     </DropdownMenuItem>
@@ -362,6 +379,65 @@ export function ProvidersEditor() {
         </div>
         <ScrollBar />
       </ScrollArea>
+
+      <Dialog open={isUpdateDialogOpen} onOpenChange={setIsUpdateDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Update Provider</DialogTitle>
+            <DialogDescription>
+              Update provider configuration
+            </DialogDescription>
+          </DialogHeader>
+          <ScrollArea className="h-[70vh] p-2">
+            <div className="space-y-4 pr-4 p-2">
+              <div className="space-y-2">
+                <Label htmlFor="description">Description</Label>
+                <Textarea
+                  id="description"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  placeholder="Provider description"
+                />
+              </div>
+
+              {providerToUpdate && (
+                <div className="space-y-4">
+                  <Label>Configuration</Label>
+                  {Object.keys(providerToUpdate.configuration).map((key) => (
+                    <div key={key} className="space-y-2">
+                      <Label htmlFor={key}>{key}</Label>
+                      <Input
+                        id={key}
+                        type="password"
+                        value={configuration[key] || ""}
+                        onChange={(e) =>
+                          setConfiguration((prev) => ({
+                            ...prev,
+                            [key]: e.target.value,
+                          }))
+                        }
+                        placeholder={`Enter ${key}`}
+                      />
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <Button
+                className="w-full"
+                onClick={handleUpdateProvider}
+                disabled={isUpdating}
+              >
+                {isUpdating && (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                )}
+                Update Provider
+              </Button>
+            </div>
+            <ScrollBar />
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
 
       <AlertDialog
         open={!!providerToDelete}

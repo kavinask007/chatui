@@ -103,8 +103,8 @@ export function Chat({
           )}
         </form>
       </div>
-      {error &&
-        toast.success(error.message || "An error occurred during the chat")}
+      {/* {error &&
+        toast.success(error.message || "An error occurred during the chat")} */}
       {/* <Block
         chatId={id}
         input={input}

@@ -71,6 +71,9 @@ export function ModelEditor() {
   const [isCreating, setIsCreating] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [modelToEdit, setModelToEdit] = useState<Model | null>(null);
 
   // Form state
   const [name, setName] = useState("");
@@ -162,6 +165,45 @@ export function ModelEditor() {
     }
   };
 
+  const handleEditModel = async () => {
+    if (!modelToEdit) return;
+
+    try {
+      setIsEditing(true);
+
+      const response = await fetch("/api/settings/model", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "updateModel",
+          id: modelToEdit.id,
+          name,
+          modelId,
+          description,
+        }),
+      });
+
+      if (!response.ok) throw new Error("Failed to update model");
+
+      toast.success("Model updated successfully");
+      setIsEditDialogOpen(false);
+      setModelToEdit(null);
+      await fetchModels();
+    } catch (error) {
+      toast.error("Failed to update model");
+    } finally {
+      setIsEditing(false);
+    }
+  };
+
+  const openEditDialog = (model: Model) => {
+    setModelToEdit(model);
+    setName(model.name);
+    setModelId(model.modelId);
+    setDescription(model.description || "");
+    setIsEditDialogOpen(true);
+  };
+
   const handleDeleteModel = async (modelId: string) => {
     try {
       const response = await fetch("/api/settings/model", {
@@ -234,7 +276,7 @@ export function ModelEditor() {
     }
   };
 
-  const filteredModels = models.filter(model => 
+  const filteredModels = models?.filter(model => 
     model.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     model.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     model.modelId.toLowerCase().includes(searchQuery.toLowerCase())
@@ -350,9 +392,7 @@ export function ModelEditor() {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuItem
-                    onClick={() => toast.info("Edit functionality coming soon")}
-                  >
+                  <DropdownMenuItem onClick={() => openEditDialog(model)}>
                     Edit details
                   </DropdownMenuItem>
                   <Select onValueChange={(groupId) => handleAddModelToGroup(model.id, groupId)}>
@@ -416,6 +456,59 @@ export function ModelEditor() {
           </Card>
         ))}
       </div>
+
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Model</DialogTitle>
+            <DialogDescription>
+              Update model details
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="edit-name">Name</Label>
+              <Input
+                id="edit-name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Model name"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="edit-modelId">Model ID</Label>
+              <Input
+                id="edit-modelId"
+                value={modelId}
+                onChange={(e) => setModelId(e.target.value)}
+                placeholder="Model identifier"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="edit-description">Description</Label>
+              <Textarea
+                id="edit-description"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Model description"
+              />
+            </div>
+
+            <Button
+              className="w-full"
+              onClick={handleEditModel}
+              disabled={isEditing}
+            >
+              {isEditing && (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              )}
+              Update Model
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
