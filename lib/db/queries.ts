@@ -373,6 +373,8 @@ export async function getUserAvailableModels(userId: string) {
           providerId: modelConfig.providerId,
           modelId: modelConfig.modelId,
           description: modelConfig.description,
+          supportsTools: modelConfig.supportsTools,
+          supportsImages: modelConfig.supportsImages,
           provider: {
             name: modelProvider.name,
             baseUrl: modelProvider.baseUrl,
@@ -405,6 +407,8 @@ export async function getUserAvailableModels(userId: string) {
         providerId: modelConfig.providerId,
         modelId: modelConfig.modelId,
         description: modelConfig.description,
+        supportsTools: modelConfig.supportsTools,
+        supportsImages: modelConfig.supportsImages,
         provider: {
           name: modelProvider.name,
           configuration: modelProvider.configuration,
@@ -581,11 +585,15 @@ export async function createModel({
   providerId,
   modelId,
   description,
+  supportsTools,
+  supportsImages,
 }: {
   name: string;
   providerId: string;
   modelId: string;
   description?: string;
+  supportsTools?: boolean;
+  supportsImages?: boolean;
 }) {
   try {
     const [result] = await db
@@ -596,6 +604,8 @@ export async function createModel({
         modelId,
         description,
         createdAt: new Date(),
+        supportsTools: supportsTools ?? false,
+        supportsImages: supportsImages ?? false,
       })
       .returning({ id: modelConfig.id });
 

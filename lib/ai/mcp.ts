@@ -65,12 +65,16 @@ export async function createToolSet(config: ToolSetConfig): Promise<ToolSet> {
         parameters: jsonSchema(tool.inputSchema),
         execute: async (args) => {
           const resultPromise = (async () => {
-            console.log(tool,args)
-            const result = await client.callTool({
-              name: tool.name,
-              arguments: args,
-            });
-            return JSON.stringify(result);
+            try {
+              const result = await client.callTool({
+                name: tool.name,
+                arguments: args,
+              });
+              return JSON.stringify(result);
+            } catch (error) {
+              console.error(`Error calling tool ${toolName}:`, error);
+              throw error;
+            }
           })();
           if (config.onCallTool) {
             config.onCallTool(serverName, toolName, args, resultPromise);

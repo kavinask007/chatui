@@ -50,6 +50,28 @@ interface Tool {
   description: string | null;
 }
 
+interface ModelConfig {
+  supportsTools: boolean;
+  supportsImages: boolean;
+}
+
+interface CachedModel {
+  id: string;
+  config: ModelConfig;
+}
+
+interface CachedTools {
+  tools: Tool[];
+  timestamp: number;
+}
+
+// Cache duration in milliseconds (e.g., 1 hour)
+const CACHE_DURATION = 60 * 60 * 1000;
+
+// In-memory cache
+const modelConfigCache = new Map<string, CachedModel>();
+let toolsCache: CachedTools | null = null;
+
 function PureMultimodalInput({
   chatId,
   input,
@@ -63,6 +85,7 @@ function PureMultimodalInput({
   append,
   handleSubmit,
   className,
+  selectedModelId
 }: {
   chatId: string;
   input: string;
@@ -84,6 +107,7 @@ function PureMultimodalInput({
     chatRequestOptions?: ChatRequestOptions
   ) => void;
   className?: string;
+  selectedModelId: string;
 }) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { width } = useWindowSize();
@@ -94,10 +118,67 @@ function PureMultimodalInput({
     []
   );
   const [isToolDialogOpen, setIsToolDialogOpen] = useState(false);
+  const [modelConfig, setModelConfig] = useState<ModelConfig>({
+    supportsTools: false,
+    supportsImages: false
+  });
+
+  useEffect(() => {
+    const fetchModelConfig = async () => {
+      // Check cache first
+      const cachedConfig = modelConfigCache.get(selectedModelId);
+      if (cachedConfig) {
+        setModelConfig(cachedConfig.config);
+        return;
+      }
+
+      try {
+        const response = await fetch("/api/settings/model", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ 
+            action: "getUserModels"
+          }),
+        });
+        const data = await response.json();
+        const model = data.models.find((m: any) => m.id === selectedModelId);
+        if (model) {
+          const config = {
+            supportsTools: model.supportsTools,
+            supportsImages: model.supportsImages
+          };
+          // Update cache
+          modelConfigCache.set(selectedModelId, {
+            id: selectedModelId,
+            config
+          });
+          setModelConfig(config);
+        }
+      } catch (error) {
+        console.error("Failed to fetch model config:", error);
+      }
+    };
+
+    if (selectedModelId) {
+      fetchModelConfig();
+    }
+  }, [selectedModelId]);
 
   useEffect(() => {
     const fetchTools = async () => {
       setIsToolsLoading(true);
+      
+      // Check cache first
+      if (toolsCache && (Date.now() - toolsCache.timestamp) < CACHE_DURATION) {
+        setTools(toolsCache.tools);
+        setIsToolsLoading(false);
+        
+        // Update selected tools with cached data
+        const availableToolIds = new Set(toolsCache.tools.map(t => t.id));
+        setSelectedTools(prev => prev.filter(toolId => availableToolIds.has(toolId)));
+        return;
+      }
+
       try {
         const response = await fetch("/api/settings/tools", {
           method: "POST",
@@ -105,6 +186,13 @@ function PureMultimodalInput({
           body: JSON.stringify({ action: "listUserTools" }),
         });
         const data = await response.json();
+        
+        // Update cache
+        toolsCache = {
+          tools: data.tools,
+          timestamp: Date.now()
+        };
+        
         setTools(data.tools);
 
         // Get available tool IDs from server response
@@ -124,8 +212,10 @@ function PureMultimodalInput({
       }
     };
 
-    fetchTools();
-  }, []); // No dependencies needed since we only want this to run once on mount
+    if (modelConfig.supportsTools) {
+      fetchTools();
+    }
+  }, [modelConfig.supportsTools]); 
 
   useEffect(() => {
     if (textareaRef.current) {
@@ -183,8 +273,8 @@ function PureMultimodalInput({
         content: input,
       },
       {
-        experimental_attachments: attachments,
-        body: { tools_selected: selectedTools },
+        experimental_attachments: modelConfig.supportsImages ? attachments : [],
+        body: { tools_selected: modelConfig.supportsTools ? selectedTools : [] },
       }
     );
 
@@ -206,6 +296,7 @@ function PureMultimodalInput({
     width,
     chatId,
     selectedTools,
+    modelConfig,
   ]);
 
   const uploadFile = async (file: File) => {
@@ -344,92 +435,99 @@ function PureMultimodalInput({
       />
 
       <div className="absolute bottom-0 p-2 w-fit flex flex-row justify-start gap-2">
-        <AttachmentsButton fileInputRef={fileInputRef} isLoading={isLoading} />
+        {modelConfig.supportsImages && (
+          <AttachmentsButton fileInputRef={fileInputRef} isLoading={isLoading} />
+        )}
 
-        <DropdownMenu
-          open={isToolDialogOpen}
-          onOpenChange={setIsToolDialogOpen}
-        >
-          <DropdownMenuTrigger asChild>
-            <Button
-              className={cx(
-                "rounded-full p-[7px] h-fit dark:border-zinc-700 hover:dark:bg-zinc-900 hover:bg-zinc-200",
-                selectedTools.length > 0 && "bg-primary text-primary-foreground hover:bg-primary/90"
-              )}
-              variant="ghost"
-              disabled={isLoading}
-            >
-              <WrenchIcon className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent
-            align="start"
-            className="w-[280px] max-h-[300px] overflow-y-auto rounded-xl"
+        {modelConfig.supportsTools && (
+          <DropdownMenu
+            open={isToolDialogOpen}
+            onOpenChange={setIsToolDialogOpen}
           >
-            <div className="p-2 font-medium text-center border-b text-secondary-foreground flex justify-between items-center">
-              <span>Tools</span>
-              <div className="flex gap-2">
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={handleSelectAllTools}
-                      className="h-6 w-6"
-                    >
-                      <CheckIcon className="h-4 w-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>Select all tools</TooltipContent>
-                </Tooltip>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={handleDeselectAllTools}
-                      className="h-6 w-6"
-                    >
-                      <CrossCircledIcon className="h-4 w-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>Deselect all tools</TooltipContent>
-                </Tooltip>
+            <DropdownMenuTrigger asChild>
+              <Button
+                className={cx(
+                  "rounded-full p-[7px] h-fit dark:border-zinc-700 hover:dark:bg-zinc-900 hover:bg-zinc-200",
+                  selectedTools.length > 0 && "bg-primary text-primary-foreground hover:bg-primary/90"
+                )}
+                variant="ghost"
+                disabled={isLoading}
+              >
+                <WrenchIcon className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+              align="start"
+              className="w-[280px] max-h-[300px] overflow-y-auto rounded-xl"
+            >
+              <div className="p-2 font-medium text-center border-b text-secondary-foreground flex justify-between items-center">
+                <span>Tools</span>
+                <div className="flex gap-2">
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={handleSelectAllTools}
+                        className="h-6 w-6"
+                      >
+                        <CheckIcon className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Select all tools</TooltipContent>
+                  </Tooltip>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={handleDeselectAllTools}
+                        className="h-6 w-6"
+                      >
+                        <CrossCircledIcon className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Deselect all tools</TooltipContent>
+                  </Tooltip>
+                </div>
               </div>
-            </div>
-            {isToolsLoading ? (
-              <div className="flex flex-col gap-2 p-4">
-                <Skeleton className="h-[20px] w-full rounded-xl" />
-                <Skeleton className="h-[20px] w-full rounded-xl" />
-                <Skeleton className="h-[20px] w-full rounded-xl" />
-              </div>
-            ) : tools.length > 0 ? (
-              <div className="grid grid-cols-1 gap-2 p-2">
-                {tools?.map((tool, index) => (
-                  <React.Fragment key={tool.id}>
-                    <div
-                      className={cx(
-                        "px-2 py-1 rounded-md cursor-pointer transition-colors flex flex-col justify-center overflow-hidden",
-                        Array.isArray(selectedTools) &&
-                          selectedTools.includes(tool.id)
-                          ? "bg-primary hover:bg-primary/70 text-primary-foreground"
-                          : "hover:bg-primary/20 dark:hover:bg-zinc-800 text-secondary-foreground"
-                      )}
-                      onClick={() => handleToolToggle(tool.id)}
-                    >
-                      <div className="font-medium truncate">{tool.name}</div>
-                    </div>
-                    {index < tools.length - 1 && <Separator className="my-1" />}
-                  </React.Fragment>
-                ))}
-              </div>
-            ) : (
-              <div className="p-4 text-center text-zinc-500">
-                No tools available. Please contact admin.
-              </div>
-            )}
-          </DropdownMenuContent>
-        </DropdownMenu>
+              {isToolsLoading ? (
+                <div className="flex flex-col gap-2 p-4">
+                  <Skeleton className="h-[20px] w-full rounded-xl" />
+                  <Skeleton className="h-[20px] w-full rounded-xl" />
+                  <Skeleton className="h-[20px] w-full rounded-xl" />
+                </div>
+              ) : tools.length > 0 ? (
+                <div className="grid grid-cols-1 gap-2 p-2">
+                  {tools?.map((tool, index) => (
+                    <React.Fragment key={tool.id}>
+                      <div
+                        className={cx(
+                          "px-2 py-1 rounded-md cursor-pointer transition-colors flex flex-row items-center justify-between overflow-hidden",
+                          Array.isArray(selectedTools) &&
+                            selectedTools.includes(tool.id)
+                            ? "bg-primary hover:bg-primary/70 text-primary-foreground"
+                            : "hover:bg-primary/20 dark:hover:bg-zinc-800 text-secondary-foreground"
+                        )}
+                        onClick={() => handleToolToggle(tool.id)}
+                      >
+                        <div className="font-medium truncate">{tool.name}</div>
+                        {Array.isArray(selectedTools) && selectedTools.includes(tool.id) && (
+                          <CheckIcon className="h-4 w-4 flex-shrink-0" />
+                        )}
+                      </div>
+                      {index < tools.length - 1 && <Separator className="my-1" />}
+                    </React.Fragment>
+                  ))}
+                </div>
+              ) : (
+                <div className="p-4 text-center text-zinc-500">
+                  No tools available. Please contact admin.
+                </div>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
       </div>
 
       <div className="absolute bottom-0 right-0 p-2 w-fit flex flex-row justify-end">
@@ -440,6 +538,7 @@ function PureMultimodalInput({
             input={input}
             submitForm={submitForm}
             uploadQueue={uploadQueue}
+            selectedModelId={selectedModelId}
           />
         )}
       </div>
@@ -509,10 +608,12 @@ function PureSendButton({
   submitForm,
   input,
   uploadQueue,
+  selectedModelId
 }: {
   submitForm: () => void;
   input: string;
   uploadQueue: Array<string>;
+  selectedModelId: string;
 }) {
   return (
     <Button
@@ -532,5 +633,6 @@ const SendButton = memo(PureSendButton, (prevProps, nextProps) => {
   if (prevProps.uploadQueue.length !== nextProps.uploadQueue.length)
     return false;
   if (prevProps.input !== nextProps.input) return false;
+  if (prevProps.selectedModelId !== nextProps.selectedModelId) return false;
   return true;
 });

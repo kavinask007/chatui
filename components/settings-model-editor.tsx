@@ -19,7 +19,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Loader2, MoreVertical, Plus, Search, X } from "lucide-react";
+import {
+  Image,
+  Loader2,
+  MoreVertical,
+  Plus,
+  Search,
+  Wrench,
+  X,
+} from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -54,6 +62,8 @@ interface Model {
   description: string | null;
   createdAt: Date;
   groups: string[];
+  supportsTools: boolean;
+  supportsImages: boolean;
 }
 
 interface Group {
@@ -80,6 +90,8 @@ export function ModelEditor() {
   const [providerId, setProviderId] = useState("");
   const [modelId, setModelId] = useState("");
   const [description, setDescription] = useState("");
+  const [supportsTools, setSupportsTools] = useState(false);
+  const [supportsImages, setSupportsImages] = useState(false);
 
   useEffect(() => {
     Promise.all([fetchProviders(), fetchModels(), fetchGroups()]).finally(() =>
@@ -134,6 +146,8 @@ export function ModelEditor() {
     setProviderId("");
     setModelId("");
     setDescription("");
+    setSupportsTools(false);
+    setSupportsImages(false);
   };
 
   const handleCreateModel = async () => {
@@ -149,6 +163,8 @@ export function ModelEditor() {
           providerId,
           modelId,
           description,
+          supportsTools,
+          supportsImages,
         }),
       });
 
@@ -180,6 +196,8 @@ export function ModelEditor() {
           name,
           modelId,
           description,
+          supportsTools,
+          supportsImages,
         }),
       });
 
@@ -201,6 +219,8 @@ export function ModelEditor() {
     setName(model.name);
     setModelId(model.modelId);
     setDescription(model.description || "");
+    setSupportsTools(model.supportsTools);
+    setSupportsImages(model.supportsImages);
     setIsEditDialogOpen(true);
   };
 
@@ -245,7 +265,10 @@ export function ModelEditor() {
     }
   };
 
-  const handleRemoveModelFromGroup = async (modelId: string, groupId: string) => {
+  const handleRemoveModelFromGroup = async (
+    modelId: string,
+    groupId: string
+  ) => {
     try {
       const response = await fetch("/api/settings/model", {
         method: "POST",
@@ -260,15 +283,17 @@ export function ModelEditor() {
       if (!response.ok) throw new Error("Failed to remove model from group");
 
       // Update models state to remove the group
-      setModels(prevModels => prevModels.map(model => {
-        if (model.id === modelId) {
-          return {
-            ...model,
-            groups: model.groups.filter(g => g !== groupId)
-          };
-        }
-        return model;
-      }));
+      setModels((prevModels) =>
+        prevModels.map((model) => {
+          if (model.id === modelId) {
+            return {
+              ...model,
+              groups: model.groups.filter((g) => g !== groupId),
+            };
+          }
+          return model;
+        })
+      );
 
       toast.success("Model removed from group successfully");
     } catch (error) {
@@ -276,10 +301,11 @@ export function ModelEditor() {
     }
   };
 
-  const filteredModels = models?.filter(model => 
-    model.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    model.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    model.modelId.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredModels = models?.filter(
+    (model) =>
+      model.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      model.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      model.modelId.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   if (loading) {
@@ -351,6 +377,29 @@ export function ModelEditor() {
                 />
               </div>
 
+              <div className="flex items-center space-x-4">
+                <div className="flex items-center">
+                  <input
+                    type="checkbox"
+                    id="supportsTools"
+                    checked={supportsTools}
+                    onChange={(e) => setSupportsTools(e.target.checked)}
+                    className="mr-2"
+                  />
+                  <Label htmlFor="supportsTools">Supports Tools</Label>
+                </div>
+                <div className="flex items-center">
+                  <input
+                    type="checkbox"
+                    id="supportsImages"
+                    checked={supportsImages}
+                    onChange={(e) => setSupportsImages(e.target.checked)}
+                    className="mr-2"
+                  />
+                  <Label htmlFor="supportsImages">Supports Images</Label>
+                </div>
+              </div>
+
               <Button
                 className="w-full"
                 onClick={handleCreateModel}
@@ -380,8 +429,10 @@ export function ModelEditor() {
         {filteredModels.map((model) => (
           <Card key={model.id}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <div>
+              <div className="flex items-center gap-2">
                 <CardTitle>{model.name}</CardTitle>
+                {model.supportsTools && <Wrench className="h-4 w-4" />}
+                {model.supportsImages && <Image className="h-4 w-4" />}
                 <CardDescription>{model.description}</CardDescription>
               </div>
               <DropdownMenu>
@@ -395,7 +446,11 @@ export function ModelEditor() {
                   <DropdownMenuItem onClick={() => openEditDialog(model)}>
                     Edit details
                   </DropdownMenuItem>
-                  <Select onValueChange={(groupId) => handleAddModelToGroup(model.id, groupId)}>
+                  <Select
+                    onValueChange={(groupId) =>
+                      handleAddModelToGroup(model.id, groupId)
+                    }
+                  >
                     <SelectTrigger>
                       <SelectValue placeholder="Add to group" />
                     </SelectTrigger>
@@ -426,7 +481,7 @@ export function ModelEditor() {
                   {model.groups.length > 0 ? (
                     <div className="flex flex-wrap gap-2 mt-1">
                       {model.groups.map((groupId) => {
-                        const group = groups.find(g => g.id === groupId);
+                        const group = groups.find((g) => g.id === groupId);
                         return (
                           <div
                             key={groupId}
@@ -437,7 +492,9 @@ export function ModelEditor() {
                               variant="ghost"
                               size="sm"
                               className="h-4 w-4 p-0 hover:bg-destructive hover:text-destructive-foreground"
-                              onClick={() => handleRemoveModelFromGroup(model.id, groupId)}
+                              onClick={() =>
+                                handleRemoveModelFromGroup(model.id, groupId)
+                              }
                             >
                               <X className="h-3 w-3" />
                             </Button>
@@ -461,9 +518,7 @@ export function ModelEditor() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Edit Model</DialogTitle>
-            <DialogDescription>
-              Update model details
-            </DialogDescription>
+            <DialogDescription>Update model details</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
@@ -496,14 +551,35 @@ export function ModelEditor() {
               />
             </div>
 
+            <div className="flex items-center space-x-4">
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  id="edit-supportsTools"
+                  checked={supportsTools}
+                  onChange={(e) => setSupportsTools(e.target.checked)}
+                  className="mr-2"
+                />
+                <Label htmlFor="edit-supportsTools">Supports Tools</Label>
+              </div>
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  id="edit-supportsImages"
+                  checked={supportsImages}
+                  onChange={(e) => setSupportsImages(e.target.checked)}
+                  className="mr-2"
+                />
+                <Label htmlFor="edit-supportsImages">Supports Images</Label>
+              </div>
+            </div>
+
             <Button
               className="w-full"
               onClick={handleEditModel}
               disabled={isEditing}
             >
-              {isEditing && (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              )}
+              {isEditing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Update Model
             </Button>
           </div>

@@ -16,7 +16,7 @@ const client = postgres(process.env.POSTGRES_URL!);
 const db = drizzle(client);
 
 export async function POST(request: Request) {
-  const session :any = await auth();
+  const session: any = await auth();
 
   if (!session?.user?.isAdmin) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
@@ -51,6 +51,8 @@ export async function POST(request: Request) {
             modelId: modelConfig.modelId,
             description: modelConfig.description,
             createdAt: modelConfig.createdAt,
+            supportsTools: modelConfig.supportsTools,
+            supportsImages: modelConfig.supportsImages,
           })
           .from(modelConfig);
 
@@ -82,7 +84,14 @@ export async function POST(request: Request) {
       }
 
       case "createModel": {
-        const { name, providerId, modelId, description } = body;
+        const {
+          name,
+          providerId,
+          modelId,
+          description,
+          supportsTools,
+          supportsImages,
+        } = body;
         if (!name || !providerId || !modelId) {
           return Response.json(
             { error: "Name, provider ID and model ID are required" },
@@ -95,12 +104,21 @@ export async function POST(request: Request) {
           providerId,
           modelId,
           description,
+          supportsTools,
+          supportsImages,
         });
         return Response.json({ message: "Model created successfully" });
       }
 
       case "updateModel": {
-        const { id, name, description, modelId } = body;
+        const {
+          id,
+          name,
+          description,
+          modelId,
+          supportsTools,
+          supportsImages,
+        } = body;
         if (!id) {
           return Response.json(
             { error: "Model ID is required" },
@@ -114,6 +132,8 @@ export async function POST(request: Request) {
             name: name,
             description: description,
             modelId: modelId,
+            supportsTools: supportsTools,
+            supportsImages: supportsImages,
           })
           .where(eq(modelConfig.id, id));
 

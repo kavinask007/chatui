@@ -74,7 +74,7 @@ export const groupToolAccess = pgTable(
       .notNull()
       .references(() => group.id, { onDelete: "cascade" }),
     toolId: uuid("toolId")
-      .notNull() 
+      .notNull()
       .references(() => tool.id, { onDelete: "cascade" }),
   },
   (table) => ({
@@ -86,23 +86,23 @@ export type GroupToolAccess = InferSelectModel<typeof groupToolAccess>;
 
 export const modelProvider = pgTable("ModelProvider", {
   id: uuid("id").primaryKey().notNull().defaultRandom(),
-  name: varchar("name", { 
+  name: varchar("name", {
     enum: [
       "openai",
-      "anthropic", 
+      "anthropic",
       "mistral",
       "cohere",
       "bedrock",
       "ollama",
       "groq",
       "google-vertex",
-      "google-generative"
-    ]
+      "google-generative",
+    ],
   }).notNull(),
   baseUrl: text("baseUrl"),
   description: text("description"),
   createdAt: timestamp("createdAt").notNull().defaultNow(),
-  configuration: json("configuration").notNull().default({})
+  configuration: json("configuration").notNull().default({}),
 });
 
 export type ModelProvider = InferSelectModel<typeof modelProvider>;
@@ -116,6 +116,8 @@ export const modelConfig = pgTable("ModelConfig", {
   modelId: text("modelId").notNull(), // e.g. gpt-4-turbo, claude-3-opus-20240229, etc
   description: text("description"),
   createdAt: timestamp("createdAt").notNull().defaultNow(),
+  supportsTools: boolean("supportsTools").notNull().default(false),
+  supportsImages: boolean("supportsImages").notNull().default(false),
 });
 
 export type ModelConfig = InferSelectModel<typeof modelConfig>;
@@ -128,17 +130,19 @@ export const modelConfigCredential = pgTable("ModelConfigCredential", {
   key: varchar("key", {
     enum: [
       "apiKey",
-      "accessKeyId", 
+      "accessKeyId",
       "secretAccessKey",
       "region",
       "projectId",
-      "serviceAccountKey"
-    ]
+      "serviceAccountKey",
+    ],
   }).notNull(),
   value: text("value").notNull(),
 });
 
-export type ModelConfigCredential = InferSelectModel<typeof modelConfigCredential>;
+export type ModelConfigCredential = InferSelectModel<
+  typeof modelConfigCredential
+>;
 
 export const modelConfigSetting = pgTable("ModelConfigSetting", {
   id: uuid("id").primaryKey().notNull().defaultRandom(),
@@ -328,7 +332,7 @@ export const authenticators = pgTable(
       columns: [authenticator.userId, authenticator.credentialID],
     }),
   })
-);  
+);
 
 export const verifiedUsers = pgTable("VerifiedUsers", {
   email: text("email").notNull(),

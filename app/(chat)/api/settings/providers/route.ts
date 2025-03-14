@@ -54,11 +54,24 @@ export async function POST(request: Request) {
             { status: 400 }
           );
         }
+
+        // Check if provider with same name already exists
+        const existingProvider = await db
+          .select()
+          .from(modelProvider)
+          .where(eq(modelProvider.name, name));
+
+        if (existingProvider.length > 0) {
+          return Response.json(
+            { error: "Provider with this name already exists" },
+            { status: 400 }
+          );
+        }
         
         // Insert new provider
         await db.insert(modelProvider).values({
           name,
-          baseUrl ,
+          baseUrl,
           description,
           configuration: configuration || {},
           createdAt: new Date()
