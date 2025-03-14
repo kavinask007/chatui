@@ -345,6 +345,7 @@ function PureBlock({
                     append={append}
                     className="bg-background dark:bg-muted"
                     setMessages={setMessages}
+                    selectedModelId=''
                   />
                 </form>
               </div>
