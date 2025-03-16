@@ -1,7 +1,10 @@
 <p align="center">
   An Open-Source AI Chatbot extenstion from the Template Built With Next.js and the AI SDK by Vercel.
 </p>
-<video src="https://kavinask007.github.io/chatui/demo.mp4" autoplay></video>
+<video controls width="600">
+  <source src="https://kavinask007.github.io/chatui/demo.mp4" type="video/mp4">
+  Your browser does not support the video tag.
+</video>
 <p align="center">
   <a href="#features"><strong>Features</strong></a> ·
   <a href="#model-providers"><strong>Model Providers</strong></a> ·
