@@ -1,8 +1,6 @@
 <p align="center">
   An Open-Source AI Chatbot extenstion from the Template Built With Next.js and the AI SDK by Vercel.
 </p>
-  <video src="https://kavinask007.github.io/chatui/demo.mp4" type="video/mp4">
-</video>
 <p align="center">
   <a href="#features"><strong>Features</strong></a> ·
   <a href="#model-providers"><strong>Model Providers</strong></a> ·
@@ -29,7 +27,7 @@
   - minio for efficient file storage
 
 - Simple and secure authentication with Google Oauth and Auth0 can easily extend to other providers using [NextAuth.js](https://github.com/nextauthjs/next-auth)
-
+<video src="https://kavinask007.github.io/chatui/demo.mp4" type="video/mp4"></video>
 ## Model Providers
 
 - OpenAI
