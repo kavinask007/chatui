@@ -2,7 +2,11 @@
   An Open-Source AI Chatbot extenstion from the Template Built With Next.js and the AI SDK by Vercel.
 </p>
 
-<video src="https://kavinask007.github.io/chatui/demo.mp4" controls></video>
+
+
+https://github.com/user-attachments/assets/e589e32e-41f0-4b65-bd45-a75e0ed7f580
+
+
 
 
 <p align="center">
