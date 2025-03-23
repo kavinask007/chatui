@@ -19,7 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Loader2, MoreVertical, Plus, Search } from "lucide-react";
+import { Loader2, MoreVertical, Plus, Search, Edit } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -68,7 +68,9 @@ export function ProvidersEditor() {
   const [isUpdateDialogOpen, setIsUpdateDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [providerToDelete, setProviderToDelete] = useState<string | null>(null);
-  const [providerToUpdate, setProviderToUpdate] = useState<Provider | null>(null);
+  const [providerToUpdate, setProviderToUpdate] = useState<Provider | null>(
+    null
+  );
   const [isUpdating, setIsUpdating] = useState(false);
 
   // Form state
@@ -243,7 +245,7 @@ export function ProvidersEditor() {
                 Add a new provider configuration
               </DialogDescription>
             </DialogHeader>
-            <ScrollArea className="h-[70vh] p-2">
+            <ScrollArea className="h-[100vh] p-2">
               <div className="space-y-4 pr-4 p-2">
                 <div className="space-y-2">
                   <Label htmlFor="type">Provider Type</Label>
@@ -285,7 +287,6 @@ export function ProvidersEditor() {
                           </Label>
                           <Input
                             id={key}
-                            type="password"
                             value={configuration[key] || ""}
                             onChange={(e) =>
                               setConfiguration((prev) => ({
@@ -348,6 +349,7 @@ export function ProvidersEditor() {
                     <DropdownMenuItem
                       onClick={() => openUpdateDialog(provider)}
                     >
+                      <Edit className="mr-2 h-4 w-4" />
                       Edit configuration
                     </DropdownMenuItem>
                     <DropdownMenuItem
@@ -384,9 +386,7 @@ export function ProvidersEditor() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Update Provider</DialogTitle>
-            <DialogDescription>
-              Update provider configuration
-            </DialogDescription>
+            <DialogDescription>Update provider configuration</DialogDescription>
           </DialogHeader>
           <ScrollArea className="h-[70vh] p-2">
             <div className="space-y-4 pr-4 p-2">
@@ -408,7 +408,6 @@ export function ProvidersEditor() {
                       <Label htmlFor={key}>{key}</Label>
                       <Input
                         id={key}
-                        type="password"
                         value={configuration[key] || ""}
                         onChange={(e) =>
                           setConfiguration((prev) => ({

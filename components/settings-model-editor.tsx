@@ -27,6 +27,7 @@ import {
   Search,
   Wrench,
   X,
+  Edit,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -444,6 +445,7 @@ export function ModelEditor() {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                   <DropdownMenuItem onClick={() => openEditDialog(model)}>
+                    <Edit className="mr-2 h-4 w-4" />
                     Edit details
                   </DropdownMenuItem>
                   <Select

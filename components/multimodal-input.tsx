@@ -17,6 +17,7 @@ import {
   type SetStateAction,
   type ChangeEvent,
   memo,
+  useMemo
 } from "react";
 import { toast } from "sonner";
 import { useLocalStorage, useWindowSize } from "usehooks-ts";
@@ -25,7 +26,7 @@ import { sanitizeUIMessages } from "@/lib/utils";
 
 import { ArrowUpIcon, PaperclipIcon, StopIcon } from "./icons";
 import { CheckIcon, CrossCircledIcon } from "@radix-ui/react-icons";
-import { WrenchIcon } from "lucide-react";
+import { Search, WrenchIcon } from "lucide-react";
 import { PreviewAttachment } from "./preview-attachment";
 import { Button } from "./ui/button";
 import { Textarea } from "./ui/textarea";
@@ -35,6 +36,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuTrigger,
+  DropdownMenuItem,
 } from "./ui/dropdown-menu";
 import { Separator } from "./ui/separator";
 import { Skeleton } from "./ui/skeleton";
@@ -43,6 +45,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "./ui/tooltip";
+import { Input } from "./ui/input";
 
 interface Tool {
   id: string;
@@ -118,10 +121,56 @@ function PureMultimodalInput({
     []
   );
   const [isToolDialogOpen, setIsToolDialogOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [highlightedIndex, setHighlightedIndex] = useState(0);
+  const searchInputRef = useRef<HTMLInputElement>(null);
   const [modelConfig, setModelConfig] = useState<ModelConfig>({
     supportsTools: false,
     supportsImages: false
   });
+
+  const filteredTools = useMemo(() => {
+    if (!searchQuery) return tools;
+    return tools?.filter(
+      (tool) =>
+        tool.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (tool.description && tool.description.toLowerCase().includes(searchQuery.toLowerCase()))
+    );
+  }, [tools, searchQuery]);
+
+  const handleSearchKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (!filteredTools?.length) return;
+
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        setHighlightedIndex((i) => (i + 1) % filteredTools.length);
+      } else if (e.key === "ArrowUp") {
+        e.preventDefault();
+        setHighlightedIndex((i) => (i - 1 + filteredTools.length) % filteredTools.length);
+      } else if (e.key === "Enter") {
+        e.preventDefault();
+        const tool = filteredTools[highlightedIndex];
+        handleToolToggle(tool.id);
+      }
+    },
+    [filteredTools, highlightedIndex]
+  );
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === "l" && modelConfig.supportsTools) {
+        e.preventDefault();
+        setIsToolDialogOpen(true);
+        setTimeout(() => {
+          searchInputRef.current?.focus();
+        }, 0);
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [modelConfig.supportsTools]);
 
   useEffect(() => {
     const fetchModelConfig = async () => {
@@ -459,6 +508,7 @@ function PureMultimodalInput({
             <DropdownMenuContent
               align="start"
               className="w-[280px] max-h-[300px] overflow-y-auto rounded-xl"
+              onCloseAutoFocus={(e) => e.preventDefault()}
             >
               <div className="p-2 font-medium text-center border-b text-secondary-foreground flex justify-between items-center">
                 <span>Tools</span>
@@ -491,38 +541,57 @@ function PureMultimodalInput({
                   </Tooltip>
                 </div>
               </div>
+              <div className="relative">
+                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search tools..."
+                  value={searchQuery}
+                  onChange={(e) => {
+                    setSearchQuery(e.target.value);
+                  }}
+                  className="pl-8"
+                  onKeyDown={handleSearchKeyDown}
+                  ref={searchInputRef}
+                  onClick={(e) => e.stopPropagation()}
+                />
+              </div>
               {isToolsLoading ? (
                 <div className="flex flex-col gap-2 p-4">
                   <Skeleton className="h-[20px] w-full rounded-xl" />
                   <Skeleton className="h-[20px] w-full rounded-xl" />
                   <Skeleton className="h-[20px] w-full rounded-xl" />
                 </div>
-              ) : tools.length > 0 ? (
+              ) : filteredTools.length > 0 ? (
                 <div className="grid grid-cols-1 gap-2 p-2">
-                  {tools?.map((tool, index) => (
-                    <React.Fragment key={tool.id}>
-                      <div
-                        className={cx(
-                          "px-2 py-1 rounded-md cursor-pointer transition-colors flex flex-row items-center justify-between overflow-hidden",
-                          Array.isArray(selectedTools) &&
-                            selectedTools.includes(tool.id)
-                            ? "bg-primary hover:bg-primary/70 text-primary-foreground"
-                            : "hover:bg-primary/20 dark:hover:bg-zinc-800 text-secondary-foreground"
-                        )}
-                        onClick={() => handleToolToggle(tool.id)}
-                      >
-                        <div className="font-medium truncate">{tool.name}</div>
-                        {Array.isArray(selectedTools) && selectedTools.includes(tool.id) && (
-                          <CheckIcon className="h-4 w-4 flex-shrink-0" />
-                        )}
-                      </div>
-                      {index < tools.length - 1 && <Separator className="my-1" />}
-                    </React.Fragment>
+                  {filteredTools?.map((tool:any, index:any) => (
+                    <DropdownMenuItem
+                      key={tool.id}
+                      onSelect={(e) => {
+                        e.preventDefault();
+                        handleToolToggle(tool.id);
+                      }}
+                      className={cx(
+                        "px-2 py-1 rounded-md cursor-pointer transition-colors flex flex-row items-center justify-between overflow-hidden",
+                        index === highlightedIndex && "bg-accent",
+                        Array.isArray(selectedTools) &&
+                          selectedTools.includes(tool.id)
+                          ? "bg-primary hover:bg-primary/70 text-primary-foreground"
+                          : "hover:bg-primary/20 dark:hover:bg-zinc-800 text-secondary-foreground"
+                      )}
+                      data-active={Array.isArray(selectedTools) && selectedTools.includes(tool.id)}
+                    >
+                      <div className="font-medium truncate">{tool.name}</div>
+                      {Array.isArray(selectedTools) && selectedTools.includes(tool.id) && (
+                        <CheckIcon className="h-4 w-4 flex-shrink-0" />
+                      )}
+                    </DropdownMenuItem>
                   ))}
                 </div>
               ) : (
                 <div className="p-4 text-center text-zinc-500">
-                  No tools available. Please contact admin.
+                  {tools?.length
+                    ? "No matching tools found"
+                    : "No tools available. Please contact admin."}
                 </div>
               )}
             </DropdownMenuContent>

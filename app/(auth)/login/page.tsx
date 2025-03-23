@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useActionState, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { FcGoogle } from "react-icons/fc";
+import { SiAuth0 } from "react-icons/si";
 import { AuthForm } from "@/components/auth-form";
 import { SubmitButton } from "@/components/submit-button";
 import Form from "next/form";
@@ -91,19 +92,28 @@ function LoginContent() {
               </p>
             </div>
 
-            <div className="space-y-4">
-              <Form action={handleGoogleSignIn}>
-                <SubmitButton isSuccessful={isSuccessful}>
-                  <FcGoogle className="w-full h-5 mr-2" />
-                  Sign in with Google
-                </SubmitButton>
-              </Form>
+            <div className="grid gap-4 w-full">
+              <div className="w-full">
+                <Form action={handleGoogleSignIn}>
+                  <SubmitButton isSuccessful={isSuccessful}>
+                    <div className="flex items-center justify-center w-full h-10">
+                      <FcGoogle className="h-5 w-5 mr-2" />
+                      Sign in with Google
+                    </div>
+                  </SubmitButton>
+                </Form>
+              </div>
 
-              <Form action={handleAuth0SignIn}>
-                <SubmitButton isSuccessful={isSuccessful}>
-                  Sign in with Auth0
-                </SubmitButton>
-              </Form>
+              <div className="w-full">
+                <Form action={handleAuth0SignIn}>
+                  <SubmitButton isSuccessful={isSuccessful}>
+                    <div className="flex items-center justify-center w-full h-10">
+                      <SiAuth0 className="h-5 w-5 mr-2" />
+                      Sign in with Auth0
+                    </div>
+                  </SubmitButton>
+                </Form>
+              </div>
             </div>
           </div>
         </div>

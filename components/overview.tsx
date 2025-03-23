@@ -10,19 +10,27 @@ export const Overview = () => {
       exit={{ opacity: 0, scale: 0.98 }}
       transition={{ delay: 0.5 }}
     >
-      <div className="text-center">
-        <p>
-          <kbd className="px-2 py-1 font-semibold bg-muted text-blue-500 rounded">Ctrl</kbd> +{" "}
-          <kbd className="px-2 py-1 font-semibold bg-muted text-blue-500 rounded">Enter</kbd>{" "}
-          starts a new chat.
-        </p>
-        <div className="my-8"></div>
-        <p>
-          <kbd className="px-2 py-1 font-semibold bg-muted text-blue-500 rounded">Shift</kbd>{" "}
-          +{" "}
-          <kbd className="px-2 py-1 font-semibold bg-muted text-blue-500 rounded">Enter</kbd>{" "}
-          inserts a new line.
-        </p>
+      <div className="flex flex-col items-center justify-center space-y-8">
+        <div className="flex items-center gap-2 bg-zinc-100 dark:bg-zinc-900 px-4 py-2 rounded-lg shadow-lg">
+          <kbd className="px-2 py-1 font-mono text-sm bg-zinc-200 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 rounded border border-zinc-300 dark:border-zinc-700 shadow">Ctrl</kbd>
+          <span className="text-zinc-600 dark:text-zinc-400">+</span>
+          <kbd className="px-2 py-1 font-mono text-sm bg-zinc-200 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 rounded border border-zinc-300 dark:border-zinc-700 shadow">Enter</kbd>
+          <span className="text-zinc-600 dark:text-zinc-400 ml-2">Opens new chat</span>
+        </div>
+
+        <div className="flex items-center gap-2 bg-zinc-100 dark:bg-zinc-900 px-4 py-2 rounded-lg shadow-lg">
+          <kbd className="px-2 py-1 font-mono text-sm bg-zinc-200 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 rounded border border-zinc-300 dark:border-zinc-700 shadow">Ctrl</kbd>
+          <span className="text-zinc-600 dark:text-zinc-400">+</span>
+          <kbd className="px-2 py-1 font-mono text-sm bg-zinc-200 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 rounded border border-zinc-300 dark:border-zinc-700 shadow">M</kbd>
+          <span className="text-zinc-600 dark:text-zinc-400 ml-2">Opens model select</span>
+        </div>
+
+        <div className="flex items-center gap-2 bg-zinc-100 dark:bg-zinc-900 px-4 py-2 rounded-lg shadow-lg">
+          <kbd className="px-2 py-1 font-mono text-sm bg-zinc-200 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 rounded border border-zinc-300 dark:border-zinc-700 shadow">Ctrl</kbd>
+          <span className="text-zinc-600 dark:text-zinc-400">+</span>
+          <kbd className="px-2 py-1 font-mono text-sm bg-zinc-200 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 rounded border border-zinc-300 dark:border-zinc-700 shadow">L</kbd>
+          <span className="text-zinc-600 dark:text-zinc-400 ml-2">Opens tools select</span>
+        </div>
       </div>
     </motion.div>
   );

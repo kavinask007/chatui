@@ -187,7 +187,7 @@ export function SettingsComponent({ isAdmin }: { isAdmin: boolean }) {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-full">
+      <div className="flex items-center justify-center h-full w-full text-center">
         <Loader2 className="h-8 w-8 animate-spin" />
       </div>
     );
